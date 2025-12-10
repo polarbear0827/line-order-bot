@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>歷史記錄</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <h1>📚 歷史記錄</h1>
+            <div class="user-info">
+                <span>👤 {{ user.name }}</span>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="{{ url_for('dashboard') }}" class="btn">返回首頁</a>
+        </div>
+
+        <div class="section">
+            {% if orders %}
+            <div class="history-list">
+                {% for order in orders %}
+                <div class="history-item {% if order.paid %}paid{% endif %}">
+                    <div class="history-date">
+                        {{ order.menu.menu_date.strftime('%m/%d') }}
+                        <span class="history-meal">{{ meal_types[order.menu.meal_type] }}</span>
+                    </div>
+                    <div class="history-user">
+                        代號 {{ order.user.user_code }} - {{ order.user.name }}
+                    </div>
+                    <div class="history-items">
+                        {{ order.items }}
+                    </div>
+                    <div class="history-amount">
+                        ${{ order.amount }}
+                        {% if order.paid %}
+                        <span class="status-paid">✅</span>
+                        {% else %}
+                        <span class="status-unpaid">⏳</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- 分頁 -->
+            {% if pagination.pages > 1 %}
+            <div class="pagination">
+                {% if pagination.has_prev %}
+                <a href="?page={{ pagination.prev_num }}" class="btn btn-small">上一頁</a>
+                {% endif %}
+
+                <span class="page-info">
+                    第 {{ pagination.page }} / {{ pagination.pages }} 頁
+                </span>
+
+                {% if pagination.has_next %}
+                <a href="?page={{ pagination.next_num }}" class="btn btn-small">下一頁</a>
+                {% endif %}
+            </div>
+            {% endif %}
+            {% else %}
+            <p class="no-data">還沒有歷史記錄</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

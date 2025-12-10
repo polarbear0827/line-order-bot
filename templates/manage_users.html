@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>使用者管理</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <h1>👥 使用者管理</h1>
+            <div class="user-info">
+                <span>👤 {{ user.name }}</span>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="{{ url_for('dashboard') }}" class="btn">返回首頁</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="section">
+            <h2>➕ 新增使用者</h2>
+            <form action="{{ url_for('add_user') }}" method="post" class="user-form">
+                <input type="text" name="user_code" placeholder="代號（例如：2）" required>
+                <input type="text" name="name" placeholder="姓名" required>
+                <button type="submit" class="btn btn-success">新增</button>
+            </form>
+            <p class="hint">💡 代號用於 LINE Bot 點餐識別，建議使用數字</p>
+        </div>
+
+        <div class="section">
+            <h2>📋 使用者列表（共 {{ users|length }} 人）</h2>
+            {% if users %}
+            <div class="users-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>代號</th>
+                            <th>姓名</th>
+                            <th>建立時間</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td><strong>{{ u.user_code }}</strong></td>
+                            <td>{{ u.name }}</td>
+                            <td>{{ u.created_date.strftime('%Y/%m/%d') }}</td>
+                            <td class="actions">
+                                <button onclick="editUser({{ u.id }}, '{{ u.user_code }}', '{{ u.name }}')"
+                                        class="btn btn-small btn-warning">編輯</button>
+                                <form action="{{ url_for('delete_user', user_id=u.id) }}"
+                                      method="post"
+                                      style="display:inline;"
+                                      onsubmit="return confirm('確定要刪除 {{ u.name }} 嗎？這將同時刪除所有相關訂單！');">
+                                    <button type="submit" class="btn btn-small btn-danger">刪除</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-data">還沒有使用者，請先新增</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- 編輯使用者對話框 -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <h3>編輯使用者</h3>
+            <form id="editForm" method="post">
+                <div class="form-group">
+                    <label>代號：</label>
+                    <input type="text" id="edit_code" name="user_code" required>
+                </div>
+                <div class="form-group">
+                    <label>姓名：</label>
+                    <input type="text" id="edit_name" name="name" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn btn-primary">儲存</button>
+                    <button type="button" onclick="closeModal()" class="btn btn-secondary">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function editUser(id, code, name) {
+            document.getElementById('editForm').action = '/users/edit/' + id;
+            document.getElementById('edit_code').value = code;
+            document.getElementById('edit_name').value = name;
+            document.getElementById('editModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+    </script>
+</body>
+</html>

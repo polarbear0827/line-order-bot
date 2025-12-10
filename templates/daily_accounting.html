@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日記帳</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <h1>💰 每日記帳</h1>
+            <div class="user-info">
+                <span>👤 {{ user.name }}</span>
+            </div>
+        </div>
+
+        <div class="nav-buttons">
+            <a href="{{ url_for('dashboard') }}" class="btn">返回首頁</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="section">
+            <h2>📅 選擇日期</h2>
+            <form method="get" class="date-form">
+                <input type="date" name="date" value="{{ target_date.strftime('%Y-%m-%d') }}" required>
+                <button type="submit" class="btn btn-primary">查詢</button>
+                <a href="{{ url_for('daily_accounting') }}" class="btn btn-secondary">今天</a>
+            </form>
+        </div>
+
+        <div class="section">
+            <h2>📊 {{ target_date.strftime('%Y年%m月%d日') }} 統計</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">總金額</span>
+                    <span class="stat-value">${{ total_amount }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">已收款</span>
+                    <span class="stat-value stat-paid">${{ total_paid }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">未收款</span>
+                    <span class="stat-value stat-unpaid">${{ total_unpaid }}</span>
+                </div>
+            </div>
+        </div>
+
+        {% if by_user %}
+        <div class="section">
+            <h2>📝 訂單明細</h2>
+            {% for user_id, data in by_user.items() %}
+            <div class="user-accounting-block">
+                <div class="user-accounting-header">
+                    <h3>
+                        代號 {{ data.user.user_code }} - {{ data.user.name }}
+                        {% if data.unpaid > 0 %}
+                        <span class="unpaid-badge">欠 ${{ data.unpaid }}</span>
+                        {% else %}
+                        <span class="paid-badge">已結清</span>
+                        {% endif %}
+                    </h3>
+                    <div class="user-total">總計 ${{ data.total }}</div>
+                </div>
+
+                <div class="orders-grid">
+                    {% for order in data.orders %}
+                    <div class="order-card {% if order.paid %}paid{% endif %}">
+                        <div class="order-meal-type">
+                            {{ meal_types[order.menu.meal_type] }}
+                        </div>
+                        <div class="order-items">
+                            {{ order.items }}
+                        </div>
+                        <div class="order-actions">
+                            <form action="{{ url_for('update_amount', order_id=order.id) }}"
+                                  method="post"
+                                  class="amount-form">
+                                <span>$</span>
+                                <input type="number"
+                                       name="amount"
+                                       value="{{ order.amount }}"
+                                       step="1"
+                                       min="0"
+                                       required>
+                                <button type="submit" class="btn btn-small">更新</button>
+                            </form>
+                            <form action="{{ url_for('toggle_paid', order_id=order.id) }}"
+                                  method="post">
+                                <button type="submit"
+                                        class="btn btn-small {% if order.paid %}btn-secondary{% else %}btn-success{% endif %}">
+                                    {% if order.paid %}取消付款{% else %}✓ 已付款{% endif %}
+                                </button>
+                            </form>
+                            <form action="{{ url_for('delete_order', order_id=order.id) }}"
+                                  method="post"
+                                  onsubmit="return confirm('確定要刪除此訂單嗎？');">
+                                <button type="submit" class="btn btn-small btn-danger">刪除</button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="section">
+            <p class="no-data">該日期沒有訂單</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登入 - 點餐系統</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h1>🍱 辦公室點餐系統</h1>
+            <p class="subtitle">管理員登入</p>
+
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+
+            <form method="post" class="login-form">
+                <input type="password"
+                       name="access_key"
+                       placeholder="請輸入管理員金鑰"
+                       required
+                       autofocus>
+                <button type="submit" class="btn btn-primary btn-large">登入</button>
+            </form>
+
+            <div class="login-footer">
+                <p>💡 使用 LINE Bot 進行點餐</p>
+                <p>管理員使用網頁後台管理</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

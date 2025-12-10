@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理後台</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <h1>🍱 管理後台</h1>
+            <div class="user-info">
+                <span>👤 {{ user.name }}</span>
+                <a href="{{ url_for('logout') }}" class="btn btn-small btn-secondary">登出</a>
+            </div>
+        </div>
+        
+        <div class="nav-buttons">
+            <a href="{{ url_for('manage_users') }}" class="btn btn-info">👥 使用者管理</a>
+            <a href="{{ url_for('daily_accounting') }}" class="btn btn-warning">💰 記帳管理</a>
+            <a href="{{ url_for('history') }}" class="btn btn-secondary">📚 歷史記錄</a>
+        </div>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="section">
+            <h2>📊 今日概況 ({{ today.strftime('%Y/%m/%d') }})</h2>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">今日總額</span>
+                    <span class="stat-value">${{ today_total }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">已收款</span>
+                    <span class="stat-value stat-paid">${{ today_paid }}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">未收款</span>
+                    <span class="stat-value stat-unpaid">${{ today_unpaid }}</span>
+                </div>
+            </div>
+        </div>
+        
+        {% if by_meal %}
+        <div class="section">
+            <h2>🍽️ 今日各餐別</h2>
+            <div class="meal-summary">
+                {% for meal_type, data in by_meal.items() %}
+                <div class="meal-card">
+                    <h3>{{ meal_types[meal_type] }}</h3>
+                    <div class="meal-stats">
+                        <p><strong>{{ data.count }}</strong> 筆訂單</p>
+                        <p class="meal-total">${{ data.total }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <div class="section">
+            <p class="no-data">今天還沒有訂單，等待 LINE Bot 接收訂單...</p>
+        </div>
+        {% endif %}
+        
+        <div class="section">
+            <h2>💳 系統統計</h2>
+            <div class="system-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-info">
+                        <p class="stat-number">{{ user_count }}</p>
+                        <p class="stat-name">使用者數量</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-info">
+                        <p class="stat-number">${{ total_unpaid }}</p>
+                        <p class="stat-name">累計欠款</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <h2>📤 上傳菜單（選用）</h2>
+            <p class="hint">💡 可上傳菜單圖片，供 LINE Bot 傳送給使用者參考</p>
+            <form action="{{ url_for('upload_menu') }}" method="post" enctype="multipart/form-data" class="upload-form">
+                <div class="form-row">
+                    <input type="date" name="menu_date" value="{{ today.strftime('%Y-%m-%d') }}" required>
+                    <select name="meal_type" required>
+                        {% for type_key, type_name in meal_types.items() %}
+                        <option value="{{ type_key }}">{{ type_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <input type="file" name="menu_file" accept=".jpg,.jpeg,.png" required>
+                    <button type="submit" class="btn btn-primary">上傳</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="section">
+            <h2>📱 LINE Bot 使用說明</h2>
+            <div class="instructions">
+                <h3>統整訂單：</h3>
+                <pre>!order 午餐
+2. 雞腿便當
+3. 魚便當
+5. 滷肉飯</pre>
+                
+                <h3>快速新增：</h3>
+                <pre>!add 2 雞腿便當</pre>
+                
+                <h3>查看今日：</h3>
+                <pre>!today</pre>
+            </div>
+        </div>
+    </div>
+</body>
+</html></title>
+</head>
+<body>
+
+</body>
+</html>
