@@ -58,10 +58,9 @@ class Config:
     ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
 
     # LINE Bot 設定（如果沒有就先用假的）
-    LINE_CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET') or '748ac77466ba2e7bd2aecaf8f299b7cb'
-    LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN') or 'ond6EnKwZ18G/mW8wqU8W4CgzeiIvbmZzR7SpcUzajiBTHhsWQgZrxCojGaWjUPkKx5j7kXQpaulBqDSJMHCtuqluWH3nhY98vyu7/Dipc50c/dJvVC6GFXVze88/9zOaNa+wrXSEVOc7IPqAFVcNwdB04t89/1O/w1cDnyilFU='
-    # LINE 群組 ID（用於推播訊息）
-    LINE_GROUP_ID = os.environ.get('LINE_GROUP_ID') or 'C8eb62b9ffa880d642beec8037cc28628'  # 需要從 LINE Bot 取得
+    LINE_CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET')
+    LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
+    LINE_GROUP_ID = os.environ.get('LINE_GROUP_ID')
 
     # 餐別設定
     MEAL_TYPES = {
