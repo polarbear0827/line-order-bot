@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}店家管理{% endblock %}
+{% block page_title %}🏪 店家管理{% endblock %}
+
+{% block content %}
+<div class="grid-2">
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">店家列表 ({{ shops|length }} 家)</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>店家名稱</th>
+              <th>分類</th>
+              <th>狀態</th>
+              <th>菜單更新</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in shops %}
+            <tr>
+              <td class="font-semibold">{{ s.name }}</td>
+              <td>{{ categories.get(s.category, s.category) }}</td>
+              <td>
+                <form action="{{ url_for('toggle_shop', sid=s.id) }}" method="POST">
+                  {% if s.is_active %}
+                    <button type="submit" class="badge badge-success" style="border:none; cursor:pointer;">營業中</button>
+                  {% else %}
+                    <button type="submit" class="badge badge-neutral" style="border:none; cursor:pointer;">停用</button>
+                  {% endif %}
+                </form>
+              </td>
+              <td class="text-muted text-sm">{{ s.last_updated.strftime('%Y/%m/%d') if s.last_updated else '未設定' }}</td>
+              <td>
+                <div class="flex gap-2">
+                  <a href="{{ url_for('manage_menu', sid=s.id) }}" class="btn btn-secondary btn-sm">菜單</a>
+                  <form action="{{ url_for('delete_shop', sid=s.id) }}" method="POST" onsubmit="return confirm('確定刪除 {{ s.name }}？');" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">刪除</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" style="text-align: center; padding: 30px; color: #64748B;">尚無店家</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">新增店家</h2>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('add_shop') }}" method="POST">
+          <div class="form-group">
+            <label class="form-label">店家名稱</label>
+            <input type="text" name="name" class="form-control" required placeholder="例如：天軍名饌">
+          </div>
+          <div class="form-group">
+            <label class="form-label">分類</label>
+            <select name="category" class="form-control" required>
+              {% for k, v in categories.items() %}
+              <option value="{{ k }}">{{ v }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">供應餐別 (可複選)</label>
+            <div class="flex gap-3" style="flex-wrap: wrap;">
+              <label class="flex items-center gap-2"><input type="checkbox" name="meal_types" value="breakfast"> 早餐</label>
+              <label class="flex items-center gap-2"><input type="checkbox" name="meal_types" value="lunch" checked> 午餐</label>
+              <label class="flex items-center gap-2"><input type="checkbox" name="meal_types" value="dinner"> 晚餐</label>
+              <label class="flex items-center gap-2"><input type="checkbox" name="meal_types" value="snack"> 點心</label>
+              <label class="flex items-center gap-2"><input type="checkbox" name="meal_types" value="drink"> 飲料</label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary">新增</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

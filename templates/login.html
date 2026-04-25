@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>登入 — 消防局點餐系統</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh; background: #F8FAFC;
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .login-wrap { width: 100%; max-width: 380px; }
+    .login-logo { text-align: center; margin-bottom: 32px; }
+    .login-logo .emoji { font-size: 48px; display: block; margin-bottom: 12px; }
+    .login-logo h1 { font-size: 20px; font-weight: 700; color: #0F172A; }
+    .login-logo p { font-size: 13px; color: #64748B; margin-top: 4px; }
+    .login-card {
+      background: #fff; border-radius: 12px; padding: 32px;
+      border: 1px solid #E2E8F0; box-shadow: 0 4px 6px rgba(0,0,0,.07);
+    }
+    .form-label { display: block; font-size: 11px; font-weight: 600; color: #64748B;
+                  text-transform: uppercase; letter-spacing: .04em; margin-bottom: 6px; }
+    .form-control {
+      width: 100%; padding: 10px 12px; border: 1px solid #E2E8F0;
+      border-radius: 8px; font-size: 14px; font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .form-control:focus { outline: none; border-color: #F59E0B; box-shadow: 0 0 0 3px #FEF3C7; }
+    .btn-login {
+      width: 100%; padding: 11px; background: #1E293B; color: #fff;
+      border: none; border-radius: 8px; font-size: 14px; font-weight: 600;
+      cursor: pointer; margin-top: 20px; transition: background .15s;
+    }
+    .btn-login:hover { background: #334155; }
+    .alert {
+      padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;
+      background: #FEE2E2; color: #B91C1C; border: 1px solid #FECACA;
+    }
+    .footer { text-align: center; margin-top: 20px; font-size: 12px; color: #94A3B8; }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+    <div class="login-logo">
+      <span class="emoji">🍱</span>
+      <h1>點餐系統</h1>
+      <p>消防局內部管理後台</p>
+    </div>
+    <div class="login-card">
+      {% for cat, msg in get_flashed_messages(with_categories=true) %}
+        <div class="alert">{{ msg }}</div>
+      {% endfor %}
+      <form method="POST">
+        <div>
+          <label class="form-label">管理員金鑰</label>
+          <input type="password" name="access_key" class="form-control"
+                 placeholder="請輸入金鑰" autofocus required>
+        </div>
+        <button type="submit" class="btn-login">登入後台</button>
+      </form>
+    </div>
+    <p class="footer">僅限授權人員使用</p>
+  </div>
+</body>
+</html>

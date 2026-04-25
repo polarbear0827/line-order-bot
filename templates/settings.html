@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}系統設定{% endblock %}
+{% block page_title %}⚙️ 系統設定{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px;">
+  <div class="card-header">
+    <h2 class="card-title">全域設定</h2>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      
+      <h3 style="font-size: 13px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px;">自動推播時間</h3>
+      <div class="grid-2" style="gap: 12px; margin-bottom: 24px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">推播未付款提醒 (時)</label>
+          <input type="number" name="push_hour" class="form-control" value="{{ s.push_hour }}" min="0" max="23" required>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">推播未付款提醒 (分)</label>
+          <input type="number" name="push_minute" class="form-control" value="{{ s.push_minute }}" min="0" max="59" required>
+        </div>
+      </div>
+
+      <h3 style="font-size: 13px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; border-top: 1px solid var(--border); padding-top: 24px;">選店推播時段 (功能開發中)</h3>
+      <div class="grid-2" style="gap: 12px; margin-bottom: 24px;">
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">早餐推播時間</label>
+          <input type="time" name="breakfast_time" class="form-control" value="{{ s.breakfast_time }}">
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label class="form-label">午餐推播時間</label>
+          <input type="time" name="lunch_time" class="form-control" value="{{ s.lunch_time }}">
+        </div>
+      </div>
+
+      <h3 style="font-size: 13px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 12px; border-top: 1px solid var(--border); padding-top: 24px;">預設值</h3>
+      <div class="form-group mb-6">
+        <label class="form-label">預設代墊人 (若未指定)</label>
+        <select name="default_payer_code" class="form-control">
+          <option value="">無 (自行付款)</option>
+          {% for u in users %}
+          <option value="{{ u.user_code }}" {% if s.default_payer_code == u.user_code %}selected{% endif %}>{{ u.user_code }}. {{ u.name }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-hint">當使用者輸入 `!點` 但沒有帶代墊人代號時，預設帶入此人。</div>
+      </div>
+
+      <button type="submit" class="btn btn-primary">儲存設定</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

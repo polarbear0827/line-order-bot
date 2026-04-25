@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}每日記帳{% endblock %}
+{% block page_title %}💰 每日記帳{% endblock %}
+
+{% block content %}
+<div class="card mb-6">
+  <div class="card-body flex items-center justify-between" style="padding: 16px 20px;">
+    <form method="GET" class="flex items-center gap-3">
+      <span class="font-semibold text-muted">選擇日期：</span>
+      <input type="date" name="date" value="{{ target_date.strftime('%Y-%m-%d') }}" class="form-control" style="width: 150px; padding: 6px 10px;" onchange="this.form.submit()">
+    </form>
+    <div class="flex gap-3">
+      <div class="text-right">
+        <div class="text-sm text-muted">當日總計</div>
+        <div class="font-semibold">${{ total|int }}</div>
+      </div>
+      <div class="text-right">
+        <div class="text-sm text-muted">已收</div>
+        <div class="font-semibold text-success" style="color: var(--success);">${{ paid|int }}</div>
+      </div>
+      <div class="text-right">
+        <div class="text-sm text-muted">未收</div>
+        <div class="font-semibold" style="color: var(--danger);">${{ unpaid|int }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2">
+  {% for uid, data in by_user.items() %}
+  <div class="card">
+    <div class="card-header" style="padding: 12px 20px;">
+      <div class="flex items-center justify-between" style="width: 100%;">
+        <div class="font-semibold">{{ data.user.user_code }}. {{ data.user.name }}</div>
+        <div class="text-sm">
+          共 <span class="font-semibold">${{ data.total|int }}</span>
+          {% if data.total > data.paid %}
+            <span style="color: var(--danger); margin-left: 8px;">未付 ${{ (data.total - data.paid)|int }}</span>
+          {% else %}
+            <span style="color: var(--success); margin-left: 8px;">已結清</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <table style="font-size: 13px;">
+        <tbody>
+          {% for o in data.orders %}
+          <tr>
+            <td style="width: 50px; color: var(--text-muted);">{{ meal_types.get(o.daily_menu.meal_type, o.daily_menu.meal_type) }}</td>
+            <td>{{ o.items }}</td>
+            <td style="width: 60px; font-weight: 600;">${{ o.amount|int }}</td>
+            <td style="width: 130px;">
+              <div class="flex gap-2">
+                <form action="{{ url_for('toggle_paid', oid=o.id) }}" method="POST">
+                  {% if o.paid %}
+                    <button type="submit" class="badge badge-success" style="border:none; cursor:pointer;">已付</button>
+                  {% else %}
+                    <button type="submit" class="badge badge-warning" style="border:none; cursor:pointer;">未付</button>
+                  {% endif %}
+                </form>
+                <form action="{{ url_for('delete_order', oid=o.id) }}" method="POST" onsubmit="return confirm('確定刪除此筆訂單？');">
+                  <button type="submit" class="btn btn-danger btn-icon" style="padding: 2px 6px;">✕</button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+    這天沒有任何訂單
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

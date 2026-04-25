@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}補登訂單{% endblock %}
+{% block page_title %}📝 補登訂單{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+  <div class="card-header">
+    <h2 class="card-title">新增歷史或漏網訂單</h2>
+  </div>
+  <div class="card-body">
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">訂單日期</label>
+        <input type="date" name="order_date" class="form-control" value="{{ request.form.get('order_date') or datetime.now().strftime('%Y-%m-%d') }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">餐別</label>
+        <select name="meal_type" class="form-control" required>
+          {% for k, v in meal_types.items() %}
+          <option value="{{ k }}" {% if request.form.get('meal_type') == k %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">點餐人</label>
+        <select name="user_code" class="form-control" required>
+          <option value="">請選擇人員...</option>
+          {% for u in users %}
+          <option value="{{ u.user_code }}">{{ u.user_code }}. {{ u.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">品項名稱</label>
+        <input type="text" name="item_name" class="form-control" required placeholder="例如：雞腿便當">
+      </div>
+      <div class="form-group">
+        <label class="form-label">金額</label>
+        <input type="number" name="amount" class="form-control" placeholder="0" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">代墊人 (選填)</label>
+        <select name="payer_code" class="form-control">
+          <option value="">無 (自己付)</option>
+          {% for u in users %}
+          <option value="{{ u.user_code }}">{{ u.user_code }}. {{ u.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="flex gap-2 mt-4" style="margin-top: 24px;">
+        <button type="submit" class="btn btn-primary">補登訂單</button>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">返回</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

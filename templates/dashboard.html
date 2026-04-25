@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+
+{% block title %}儀表板{% endblock %}
+{% block page_title %}儀表板{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+  <div class="stat-card">
+    <span class="stat-label">今日訂單數</span>
+    <span class="stat-value">{{ today_orders|length }} 筆</span>
+  </div>
+  <div class="stat-card accent">
+    <span class="stat-label">今日總金額</span>
+    <span class="stat-value">${{ total | int }}</span>
+  </div>
+  <div class="stat-card success">
+    <span class="stat-label">今日已收</span>
+    <span class="stat-value">${{ paid | int }}</span>
+  </div>
+  <div class="stat-card danger">
+    <span class="stat-label">今日未收</span>
+    <span class="stat-value">${{ unpaid | int }}</span>
+  </div>
+</div>
+
+<div class="card mb-6">
+  <div class="card-header">
+    <h2 class="card-title">今日訂單明細 ({{ today.strftime('%Y/%m/%d') }})</h2>
+    <a href="{{ url_for('accounting') }}" class="btn btn-secondary btn-sm">前往記帳</a>
+  </div>
+  <div class="card-body" style="padding: 0;">
+    <div class="table-wrap">
+      {% if today_orders %}
+      <table>
+        <thead>
+          <tr>
+            <th>餐別</th>
+            <th>代號</th>
+            <th>姓名</th>
+            <th>店家 / 品項</th>
+            <th>金額</th>
+            <th>狀態</th>
+            <th>代墊人</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for o in today_orders %}
+          <tr>
+            <td>{{ meal_types.get(o.daily_menu.meal_type, o.daily_menu.meal_type) }}</td>
+            <td class="font-semibold">{{ o.user.user_code }}</td>
+            <td>{{ o.user.name }}</td>
+            <td>
+              {% if o.daily_menu.shop %}<span class="text-muted text-sm">[{{ o.daily_menu.shop.name }}]</span><br>{% endif %}
+              {{ o.items }}
+            </td>
+            <td class="font-semibold">${{ o.amount | int }}</td>
+            <td>
+              {% if o.paid %}
+                <span class="badge badge-success">已付</span>
+              {% else %}
+                <span class="badge badge-warning">未付</span>
+              {% endif %}
+            </td>
+            <td class="text-muted text-sm">
+              {% if o.payer %}{{ o.payer.user_code }}. {{ o.payer.name }}{% else %}-{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div style="padding: 40px; text-align: center; color: var(--text-muted);">
+        今日尚無訂單紀錄
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}菜單管理 - {{ shop.name }}{% endblock %}
+{% block page_title %}📋 {{ shop.name }} 菜單管理{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+  <a href="{{ url_for('manage_shops') }}" class="btn btn-secondary btn-sm">← 返回店家列表</a>
+</div>
+
+<div class="grid-2">
+  <!-- 左側：現有菜單 -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">品項列表 ({{ items|length }} 項)</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>品名</th>
+              <th>價格</th>
+              <th style="width: 130px;">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr>
+              <form action="{{ url_for('edit_menu_item', sid=shop.id, iid=item.id) }}" method="POST">
+                <td>
+                  <input type="text" name="name" value="{{ item.name }}" class="form-control" style="padding: 4px 8px; font-size: 13px;">
+                </td>
+                <td>
+                  <input type="number" name="price" value="{{ item.price|int if item.price else '' }}" class="form-control" style="padding: 4px 8px; font-size: 13px; width: 70px;">
+                </td>
+                <td>
+                  <div class="flex gap-2">
+                    <button type="submit" class="btn btn-secondary btn-sm">存</button>
+                    <button type="submit" form="del_{{ item.id }}" class="btn btn-danger btn-sm">刪</button>
+                  </div>
+                </td>
+              </form>
+              <form id="del_{{ item.id }}" action="{{ url_for('delete_menu_item', sid=shop.id, iid=item.id) }}" method="POST"></form>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" style="text-align: center; padding: 30px; color: #64748B;">尚無品項</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右側：上傳與新增 -->
+  <div>
+    {% if session.get('ocr_result') and session.get('ocr_shop_id') == shop.id %}
+    <div class="card mb-6" style="border-color: var(--accent);">
+      <div class="card-header" style="background: var(--accent-light);">
+        <h2 class="card-title" style="color: #92400E;">✨ AI 解析結果確認</h2>
+      </div>
+      <div class="card-body">
+        <p class="text-sm text-muted mb-4">請確認以下品項名稱與價格，修改無誤後再按儲存。</p>
+        <form action="{{ url_for('save_ocr_menu', sid=shop.id) }}" method="POST">
+          <div style="max-height: 400px; overflow-y: auto; padding-right: 10px;">
+            {% for row in session['ocr_result'] %}
+            <div class="flex gap-2 mb-2">
+              <input type="text" name="name" value="{{ row.name }}" class="form-control" placeholder="品名">
+              <input type="number" name="price" value="{{ row.price }}" class="form-control" placeholder="金額" style="width: 100px;">
+            </div>
+            {% endfor %}
+          </div>
+          <div class="mt-4 flex gap-2">
+            <button type="submit" class="btn btn-primary">全部儲存</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="card mb-6">
+      <div class="card-header">
+        <h2 class="card-title">🤖 上傳菜單 (AI 自動辨識)</h2>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('ocr_menu', sid=shop.id) }}" method="POST" enctype="multipart/form-data">
+          <p class="text-muted text-sm mb-4">上傳菜單照片，系統將使用 Gemini AI 自動提取品項和價格。如果價格不清楚，之後可以手動修改。</p>
+          <div class="form-group">
+            <input type="file" name="menu_image" accept="image/png, image/jpeg" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-secondary">開始辨識 (需等候約 5-10 秒)</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">手動新增單筆</h2>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('add_menu_item', sid=shop.id) }}" method="POST">
+          <div class="grid-2" style="gap:10px;">
+            <div class="form-group" style="margin:0;">
+              <input type="text" name="name" class="form-control" required placeholder="品名 (必填)">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <input type="number" name="price" class="form-control" placeholder="價格 (選填)">
+            </div>
+          </div>
+          <button type="submit" class="btn btn-secondary mt-4" style="margin-top: 12px;">新增</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

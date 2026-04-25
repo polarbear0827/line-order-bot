@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}人員管理{% endblock %}
+{% block page_title %}👥 人員管理{% endblock %}
+
+{% block content %}
+<div class="grid-2">
+  <!-- 左側：人員列表 -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">人員列表 ({{ users|length }} 人)</h2>
+    </div>
+    <div class="card-body" style="padding: 0;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>代號</th>
+              <th>姓名</th>
+              <th style="width: 120px;">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td class="font-semibold">{{ u.user_code }}</td>
+              <td>{{ u.name }}</td>
+              <td>
+                <div class="flex gap-2">
+                  <button class="btn btn-secondary btn-sm" onclick="editUser({{ u.id }}, '{{ u.user_code }}', '{{ u.name }}')">編輯</button>
+                  <form action="{{ url_for('delete_user', uid=u.id) }}" method="POST" onsubmit="return confirm('確定要刪除 {{ u.name }} 嗎？');" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">刪除</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" style="text-align: center; padding: 30px; color: #64748B;">尚無人員資料</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 右側：新增與匯入 -->
+  <div>
+    <div class="card mb-6" id="addCard">
+      <div class="card-header">
+        <h2 class="card-title" id="formTitle">新增人員</h2>
+      </div>
+      <div class="card-body">
+        <form id="userForm" action="{{ url_for('add_user') }}" method="POST">
+          <div class="form-group">
+            <label class="form-label">代號 (數字優先)</label>
+            <input type="text" name="user_code" id="user_code" class="form-control" required placeholder="例如：2">
+          </div>
+          <div class="form-group">
+            <label class="form-label">姓名</label>
+            <input type="text" name="name" id="name" class="form-control" required placeholder="例如：王大明">
+          </div>
+          <div class="flex gap-2">
+            <button type="submit" class="btn btn-primary">儲存</button>
+            <button type="button" class="btn btn-secondary" onclick="resetForm()" style="display:none;" id="cancelBtn">取消</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Excel 批次匯入</h2>
+      </div>
+      <div class="card-body">
+        <form action="{{ url_for('import_users') }}" method="POST" enctype="multipart/form-data">
+          <p class="text-muted text-sm mb-4">請上傳 Excel 檔 (.xlsx)。第一欄為代號，第二欄為姓名，第一行為標題列（會被略過）。代號重複會自動略過。</p>
+          <div class="form-group">
+            <input type="file" name="excel_file" accept=".xlsx" class="form-control" required>
+          </div>
+          <button type="submit" class="btn btn-secondary">開始匯入</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function editUser(id, code, name) {
+  document.getElementById('formTitle').innerText = '編輯人員';
+  document.getElementById('userForm').action = '/users/edit/' + id;
+  document.getElementById('user_code').value = code;
+  document.getElementById('name').value = name;
+  document.getElementById('cancelBtn').style.display = 'inline-flex';
+}
+
+function resetForm() {
+  document.getElementById('formTitle').innerText = '新增人員';
+  document.getElementById('userForm').action = '{{ url_for('add_user') }}';
+  document.getElementById('user_code').value = '';
+  document.getElementById('name').value = '';
+  document.getElementById('cancelBtn').style.display = 'none';
+}
+</script>
+{% endblock %}
