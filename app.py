@@ -142,7 +142,7 @@ def add_user():
 @app.route('/users/edit/<int:uid>', methods=['POST'])
 @login_required(admin_only=True)
 def edit_user(uid):
-    u = db.session.get_or_404(User, uid)
+    u = db.get_or_404(User, uid)
     code = request.form.get('user_code', '').strip()
     name = request.form.get('name', '').strip()
     if not code or not name:
@@ -160,7 +160,7 @@ def edit_user(uid):
 @app.route('/users/delete/<int:uid>', methods=['POST'])
 @login_required(admin_only=True)
 def delete_user(uid):
-    u = db.session.get_or_404(User, uid)
+    u = db.get_or_404(User, uid)
     if u.is_admin:
         flash('無法刪除管理員', 'error')
     else:
@@ -222,7 +222,7 @@ def add_shop():
 @app.route('/shops/toggle/<int:sid>', methods=['POST'])
 @login_required(admin_only=True)
 def toggle_shop(sid):
-    s = db.session.get_or_404(Shop, sid)
+    s = db.get_or_404(Shop, sid)
     s.is_active = not s.is_active
     db.session.commit()
     flash(f'{"✅ 已啟用" if s.is_active else "⏸️ 已停用"}：{s.name}', 'success')
@@ -231,7 +231,7 @@ def toggle_shop(sid):
 @app.route('/shops/delete/<int:sid>', methods=['POST'])
 @login_required(admin_only=True)
 def delete_shop(sid):
-    s = db.session.get_or_404(Shop, sid)
+    s = db.get_or_404(Shop, sid)
     name = s.name
     db.session.delete(s)
     db.session.commit()
@@ -242,14 +242,14 @@ def delete_shop(sid):
 @app.route('/shops/<int:sid>/menu')
 @login_required(admin_only=True)
 def manage_menu(sid):
-    s = db.session.get_or_404(Shop, sid)
+    s = db.get_or_404(Shop, sid)
     return render_template('manage_menu.html', user=get_current_user(), shop=s,
                            items=s.items)
 
 @app.route('/shops/<int:sid>/menu/ocr', methods=['POST'])
 @login_required(admin_only=True)
 def ocr_menu(sid):
-    s = db.session.get_or_404(Shop, sid)
+    s = db.get_or_404(Shop, sid)
     f = request.files.get('menu_image')
     if not f or not allowed_file(f.filename):
         flash('請上傳 JPG/PNG 圖片', 'error')
@@ -327,7 +327,7 @@ def add_menu_item(sid):
 @app.route('/shops/<int:sid>/menu/edit/<int:iid>', methods=['POST'])
 @login_required(admin_only=True)
 def edit_menu_item(sid, iid):
-    item = db.session.get_or_404(MenuItem, iid)
+    item = db.get_or_404(MenuItem, iid)
     item.name = request.form.get('name', item.name).strip()
     price_str = request.form.get('price', '').strip()
     item.price = float(price_str) if price_str else None
@@ -339,7 +339,7 @@ def edit_menu_item(sid, iid):
 @app.route('/shops/<int:sid>/menu/delete/<int:iid>', methods=['POST'])
 @login_required(admin_only=True)
 def delete_menu_item(sid, iid):
-    item = db.session.get_or_404(MenuItem, iid)
+    item = db.get_or_404(MenuItem, iid)
     db.session.delete(item)
     db.session.commit()
     flash('✅ 已刪除品項', 'success')
@@ -425,7 +425,7 @@ def accounting():
 @app.route('/accounting/toggle_paid/<int:oid>', methods=['POST'])
 @login_required(admin_only=True)
 def toggle_paid(oid):
-    o = db.session.get_or_404(Order, oid)
+    o = db.get_or_404(Order, oid)
     o.paid = not o.paid
     db.session.commit()
     return redirect(request.referrer or url_for('accounting'))
@@ -433,7 +433,7 @@ def toggle_paid(oid):
 @app.route('/accounting/delete/<int:oid>', methods=['POST'])
 @login_required(admin_only=True)
 def delete_order(oid):
-    o = db.session.get_or_404(Order, oid)
+    o = db.get_or_404(Order, oid)
     db.session.delete(o)
     db.session.commit()
     flash('✅ 已刪除訂單', 'success')
