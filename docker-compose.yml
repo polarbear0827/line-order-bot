@@ -17,10 +17,15 @@ services:
       timeout: 10s
       retries: 3
 
-  cloudflared:
-    image: cloudflare/cloudflared:latest
+  ngrok:
+    image: ngrok/ngrok:latest
     restart: unless-stopped
-    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+    command:
+      - "http"
+      - "app:5000"
+      - "--domain=accurate-collector-exquisite.ngrok-free.dev"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
     depends_on:
       - app
     networks:
