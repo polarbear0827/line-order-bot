@@ -43,8 +43,14 @@ class Config:
     SHOP_CATEGORIES = {
         'bento': '便當',
         'noodle': '麵/湯',
-        'dumpling': '餃子水餃',
+        'dumpling': '水餃',
         'snack': '小吃',
+        'fried_chicken': '炸雞/速食',
+        'pasta': '義大利麵/燉飯',
+        'hotpot': '熱炒/鍋物',
+        'burger': '漢堡/輕食',
         'breakfast': '早餐',
         'drink': '飲料',
+        'dessert': '咖啡/甜點',
+        'others': '其他',
     }
