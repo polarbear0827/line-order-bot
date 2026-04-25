@@ -264,23 +264,26 @@ def ocr_menu(sid):
     s.last_updated = datetime.utcnow()
     db.session.commit()
 
-    # 呼叫 Groq LLaMA 3.2 Vision OCR
+    # 呼叫 OpenRouter AI (Baidu Qianfan OCR Fast)
     try:
-        from groq import Groq
+        from openai import OpenAI
         import base64
         import json, re
 
         with open(filepath, "rb") as image_file:
             base64_image = base64.b64encode(image_file.read()).decode('utf-8')
 
-        client = Groq(api_key=app.config['GROQ_API_KEY'])
+        client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=app.config['OPENROUTER_API_KEY'],
+        )
         
         chat_completion = client.chat.completions.create(
             messages=[
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "請從這張菜單圖片中，提取所有品項名稱與對應價格，以 JSON 陣列回傳，格式如下：\n[{\"name\": \"肉羹飯\", \"price\": 70}, {\"name\": \"肉羹麵\", \"price\": 65}]\n如果價格看不清楚，price 填 null。只回傳純 JSON 陣列，不要任何 markdown 語法或其他說明文字。"},
+                        {"type": "text", "text": "請從這張菜單圖片中，精準提取所有品項名稱與對應價格，保留原本繁體中文字。以 JSON 陣列回傳，格式如下：\n[{\"name\": \"大腸臭臭鍋\", \"price\": 160}, {\"name\": \"海鮮香香鍋\", \"price\": 160}]\n如果價格看不清楚，price 填 null。只回傳純 JSON 陣列，不要任何 markdown 語法或其他說明文字。"},
                         {
                             "type": "image_url",
                             "image_url": {
@@ -290,7 +293,7 @@ def ocr_menu(sid):
                     ],
                 }
             ],
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            model="baidu/qianfan-ocr-fast:free",
             temperature=0,
         )
         

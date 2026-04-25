@@ -20,8 +20,8 @@ class Config:
     LINE_CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
     LINE_GROUP_ID = os.environ.get('LINE_GROUP_ID')
 
-    # Groq AI（OCR 菜單辨識）
-    GROQ_API_KEY = os.environ.get('GROQ_API_KEY')
+    # OpenRouter AI（OCR 菜單辨識）
+    OPENROUTER_API_KEY = os.environ.get('OPENROUTER_API_KEY')
 
     # 管理員金鑰
     ADMIN_ACCESS_KEY = os.environ.get('ADMIN_ACCESS_KEY') or 'admin123456'
