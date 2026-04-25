@@ -26,6 +26,12 @@ class OrderBot:
                                     messages=[LineTextMessage(text=text)])
             )
 
+    def send_messages(self, reply_token, messages):
+        with ApiClient(self.configuration) as api:
+            MessagingApi(api).reply_message(
+                ReplyMessageRequest(reply_token=reply_token, messages=messages)
+            )
+
     def send_push_message(self, to, text):
         try:
             with ApiClient(self.configuration) as api:
@@ -257,6 +263,43 @@ class OrderBot:
         reply += f'💰 總計 ${int(total)}｜已收 ${int(paid)}｜未收 ${int(total - paid)}'
         return reply
 
+    # ─── !菜單 ───────────────────────────────────────────────────
+    def handle_menu_query(self, message_text, host_url):
+        keyword = re.sub(r'[！!]菜單|[！!]menu', '', message_text, flags=re.IGNORECASE).strip()
+        if not keyword:
+            return [LineTextMessage(text='❌ 請輸入店家名稱，例如：!菜單 麗媽')]
+
+        shops = Shop.query.all()
+        if not shops:
+            return [LineTextMessage(text='❌ 目前系統中沒有任何店家')]
+
+        names = [s.name for s in shops]
+        result = process.extractOne(keyword, names, scorer=fuzz.ratio)
+        
+        if not result or result[1] < 50:
+            return [LineTextMessage(text=f'❌ 找不到與「{keyword}」相近的店家')]
+
+        matched_shop = next(s for s in shops if s.name == result[0])
+        
+        messages = []
+        if matched_shop.menu_image:
+            image_url = f"{host_url.rstrip('/')}/static/uploads/{matched_shop.menu_image}"
+            image_url = image_url.replace("http://", "https://")
+            messages.append(LineTextMessage(text=f'為您找尋到最符合的店家：【{matched_shop.name}】'))
+            messages.append(ImageMessage(original_content_url=image_url, preview_image_url=image_url))
+        else:
+            items = MenuItem.query.filter_by(shop_id=matched_shop.id, is_available=True).all()
+            if not items:
+                messages.append(LineTextMessage(text=f'📋 【{matched_shop.name}】目前沒有上傳圖片，也沒有品項資料。'))
+            else:
+                text = f'📋 【{matched_shop.name}】目前沒有上傳圖片，現有品項如下：\n' + '─' * 20 + '\n'
+                for i in items:
+                    price = f'${int(i.price)}' if i.price else '價格未定'
+                    text += f'{i.name}  {price}\n'
+                messages.append(LineTextMessage(text=text))
+                
+        return messages
+
     # ─── !結清 ────────────────────────────────────────────────────
     def handle_checkout(self, message_text):
         code = re.sub(r'[！!](結清|checkout)', '', message_text, flags=re.IGNORECASE).strip()
@@ -302,6 +345,9 @@ class OrderBot:
 ══════════════════
 🔍 查詢
 ══════════════════
+!菜單 [店家名稱]
+→ 找尋並顯示該店家的菜單圖片
+
 !bill [代號] 或直接輸入代號
 → 查個人帳單
 

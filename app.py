@@ -524,6 +524,10 @@ def handle_text_message(event):
             return
     elif text == '!groupid' and group_id:
         reply = f'群組 ID：{group_id}'
+    elif text.lower().startswith(('!菜單', '！菜單', '!menu', '！menu')):
+        messages = order_bot.handle_menu_query(text, request.host_url)
+        order_bot.send_messages(event.reply_token, messages)
+        return
     elif text.isdigit() or text.lower().startswith(('!bill', '！bill')):
         reply = order_bot.handle_bill_query(text)
     elif text.lower().startswith(('!today', '！today', '!今日', '！今日', '!今天', '！今天')):
