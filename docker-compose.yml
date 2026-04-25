@@ -4,6 +4,8 @@ services:
   app:
     build: .
     restart: unless-stopped
+    ports:
+      - "5000:5000"
     volumes:
       - ./data:/app/data          # SQLite 資料庫持久化
       - ./static:/app/static      # 上傳的圖片持久化
