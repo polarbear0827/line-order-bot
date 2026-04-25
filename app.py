@@ -269,7 +269,7 @@ def ocr_menu(sid):
         import google.generativeai as genai
         from PIL import Image
         genai.configure(api_key=app.config['GEMINI_API_KEY'])
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.0-flash')
         img = Image.open(filepath)
         result = model.generate_content([
             img,
