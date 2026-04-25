@@ -264,21 +264,37 @@ def ocr_menu(sid):
     s.last_updated = datetime.utcnow()
     db.session.commit()
 
-    # 呼叫 Gemini Vision OCR
+    # 呼叫 Groq LLaMA 3.2 Vision OCR
     try:
-        import google.generativeai as genai
-        from PIL import Image
-        genai.configure(api_key=app.config['GEMINI_API_KEY'])
-        model = genai.GenerativeModel('gemini-2.0-flash')
-        img = Image.open(filepath)
-        result = model.generate_content([
-            img,
-            '請從這張菜單圖片中，提取所有品項名稱與對應價格，以 JSON 陣列回傳，格式如下：\n'
-            '[{"name": "肉羹飯", "price": 70}, {"name": "肉羹麵", "price": 65}]\n'
-            '如果價格看不清楚，price 填 null。只回傳 JSON，不要其他說明文字。'
-        ])
+        from groq import Groq
+        import base64
         import json, re
-        raw = result.text.strip()
+
+        with open(filepath, "rb") as image_file:
+            base64_image = base64.b64encode(image_file.read()).decode('utf-8')
+
+        client = Groq(api_key=app.config['GROQ_API_KEY'])
+        
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": "請從這張菜單圖片中，提取所有品項名稱與對應價格，以 JSON 陣列回傳，格式如下：\n[{\"name\": \"肉羹飯\", \"price\": 70}, {\"name\": \"肉羹麵\", \"price\": 65}]\n如果價格看不清楚，price 填 null。只回傳純 JSON 陣列，不要任何 markdown 語法或其他說明文字。"},
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64_image}",
+                            },
+                        },
+                    ],
+                }
+            ],
+            model="llama-3.2-90b-vision-preview",
+            temperature=0,
+        )
+        
+        raw = chat_completion.choices[0].message.content.strip()
         # 去掉 markdown code block（如果有的話）
         raw = re.sub(r'^```[a-z]*\n?', '', raw)
         raw = re.sub(r'\n?```$', '', raw)
