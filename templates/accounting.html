@@ -50,7 +50,11 @@
           <tr>
             <td style="width: 50px; color: var(--text-muted);">{{ meal_types.get(o.daily_menu.meal_type, o.daily_menu.meal_type) }}</td>
             <td>{{ o.items }}</td>
-            <td style="width: 60px; font-weight: 600;">${{ o.amount|int }}</td>
+            <td style="width: 70px; font-weight: 600;">
+              <form action="{{ url_for('update_order_amount', oid=o.id) }}" method="POST" style="display: inline-flex; align-items: center; gap: 2px;">
+                $<input type="number" name="amount" value="{{ o.amount|int }}" class="form-control" style="width: 50px; padding: 2px 4px; height: 24px; font-size: 13px;" onchange="this.form.submit()">
+              </form>
+            </td>
             <td style="width: 130px;">
               <div class="flex gap-2">
                 <form action="{{ url_for('toggle_paid', oid=o.id) }}" method="POST">

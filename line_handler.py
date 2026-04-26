@@ -106,11 +106,23 @@ class OrderBot:
         lines = message_text.strip().split('\n')
         first = lines[0].replace('!點', '').replace('！點', '').strip()
 
-        # 解析代墊人
-        payer_code = first.strip() if first.strip().isdigit() else \
-            SystemSetting.get('default_payer_code', '')
-        payer = User.query.filter_by(user_code=payer_code).first() if payer_code else None
+        parts = first.split()
+        shop_name = None
+        payer_code = None
 
+        if len(parts) >= 2:
+            shop_name = parts[0]
+            payer_code = parts[1]
+        elif len(parts) == 1:
+            if parts[0].isdigit():
+                payer_code = parts[0]
+            else:
+                shop_name = parts[0]
+
+        if not payer_code:
+            payer_code = SystemSetting.get('default_payer_code', '')
+
+        payer = User.query.filter_by(user_code=payer_code).first() if payer_code else None
         if payer_code and not payer:
             return f'❌ 代墊人代號 {payer_code} 不存在'
 
@@ -123,7 +135,19 @@ class OrderBot:
             db.session.add(dm)
             db.session.commit()
 
-        shop = dm.shop  # 可能是 None（未透過 Flex 流程選店）
+        # 若有輸入店家名稱，尋找並更新 DailyMenu
+        if shop_name:
+            shops = Shop.query.filter_by(is_active=True).all()
+            if shops:
+                shop_names = [s.name for s in shops]
+                from thefuzz import process, fuzz
+                result = process.extractOne(shop_name, shop_names, scorer=fuzz.ratio)
+                if result and result[1] >= 50:
+                    matched_shop = next(s for s in shops if s.name == result[0])
+                    dm.shop_id = matched_shop.id
+                    db.session.commit()
+
+        shop = dm.shop
 
         # 解析訂單行
         orders_info = []

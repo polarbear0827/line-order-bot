@@ -478,7 +478,7 @@ def accounting():
                            total=total, paid=paid, unpaid=total - paid,
                            meal_types=app.config['MEAL_TYPES'])
 
-@app.route('/accounting/toggle_paid/<int:oid>', methods=['POST'])
+@app.route('/orders/<int:oid>/toggle_paid', methods=['POST'])
 @login_required(admin_only=True)
 def toggle_paid(oid):
     o = db.get_or_404(Order, oid)
@@ -486,7 +486,20 @@ def toggle_paid(oid):
     db.session.commit()
     return redirect(request.referrer or url_for('accounting'))
 
-@app.route('/accounting/delete/<int:oid>', methods=['POST'])
+@app.route('/orders/<int:oid>/amount', methods=['POST'])
+@login_required(admin_only=True)
+def update_order_amount(oid):
+    o = db.get_or_404(Order, oid)
+    try:
+        new_amount = float(request.form.get('amount', 0))
+        o.amount = new_amount
+        db.session.commit()
+        flash('✅ 已更新金額', 'success')
+    except ValueError:
+        flash('❌ 金額格式錯誤', 'error')
+    return redirect(request.referrer or url_for('accounting'))
+
+@app.route('/orders/<int:oid>/delete', methods=['POST'])
 @login_required(admin_only=True)
 def delete_order(oid):
     o = db.get_or_404(Order, oid)
