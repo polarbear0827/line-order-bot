@@ -140,7 +140,7 @@ class OrderBot:
             shops = Shop.query.filter_by(is_active=True).all()
             if shops:
                 shop_names = [s.name for s in shops]
-                from thefuzz import process, fuzz
+                from rapidfuzz import process, fuzz
                 result = process.extractOne(shop_name, shop_names, scorer=fuzz.ratio)
                 if result and result[1] >= 50:
                     matched_shop = next(s for s in shops if s.name == result[0])
