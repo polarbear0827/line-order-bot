@@ -54,17 +54,16 @@
 
   <hr class="section-divider">
 
-  <!-- 2. 點餐 -->
   <div class="guide-card">
     <h2 class="guide-title">🍱 核心指令：<code>!點</code>（必學！）</h2>
     <p class="guide-text">這是最重要的指令，用來記錄今天大家點了什麼。格式如下：</p>
     <div class="cmd-label">指令格式</div>
-    <div class="cmd-box">!點 [店家名稱] [代墊人代號]
+    <div class="cmd-box">!點 [餐別(選填)] [店家名稱] [代墊人代號]
 [點餐人代號]. [品項名稱]
 [點餐人代號]. [品項名稱]
 ...</div>
 
-    <div class="cmd-label" style="margin-top:14px;">實際範例輸入</div>
+    <div class="cmd-label" style="margin-top:14px;">📌 基本點餐（最常用）</div>
     <div class="chat-wrap">
       <div class="chat-row right">
         <div class="bubble-out">!點 麗媽 18
@@ -94,9 +93,63 @@
       </div>
     </div>
 
+    <div class="cmd-label" style="margin-top:16px;">📌 指定餐別（提早訂餐、訂飲料時用）<span class="new-badge">NEW</span></div>
+    <p class="guide-text">如果現在是午餐時間，但要訂的是下午的飲料，或是想提早預訂晚餐，就在店家名稱前面加上餐別！</p>
+    <div class="cmd-box">!點 飲料 五十嵐 18
+21. 珍珠奶茶
+5. 芒果冰沙</div>
+    <div class="chat-wrap">
+      <div class="chat-row right">
+        <div class="bubble-out">!點 飲料 五十嵐 18
+21. 珍珠奶茶
+5. 芒果冰沙</div>
+      </div>
+      <div class="chat-clear"></div>
+      <div class="chat-row left">
+        <div class="avatar">🤖</div>
+        <div class="bubble-in">✅ 已記錄 2 筆訂單
+【飲料 - 04/26】五十嵐
+💳 代墊：18. 王大明
+────────────────────
+21. 阿明  珍珠奶茶  $65
+5.  小華  芒果冰沙  $75
+────────────────────
+📞 打電話叫餐總表
+🍱 珍珠奶茶 × 1
+🍱 芒果冰沙 × 1
+────────────────────
+共 2 份，總計 $140
+📱 五十嵐：0933-123-456</div>
+      </div>
+    </div>
+
+    <div class="cmd-label" style="margin-top:14px;">✅ 餐別關鍵字一覽</div>
+    <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:12px;">
+      <thead><tr style="background:#F8FAFC; border-bottom:1px solid var(--border);">
+        <th style="padding:8px 12px; text-align:left; color:#64748B;">輸入</th>
+        <th style="padding:8px 12px; text-align:left; color:#64748B;">等於</th>
+        <th style="padding:8px 12px; text-align:left; color:#64748B;">後台顯示顏色</th>
+      </tr></thead>
+      <tbody>
+        {% for kw, meal, color, bg in [
+          ('早餐 / 早', '早餐', '#1D4ED8', '#BFDBFE'),
+          ('午餐 / 午', '午餐', '#854D0E', '#FEF08A'),
+          ('晚餐 / 晚', '晚餐', '#065F46', '#BBF7D0'),
+          ('飲料 / 飲', '飲料', '#6B21A8', '#E9D5FF'),
+          ('點心 / 下午茶', '點心', '#9A3412', '#FED7AA'),
+        ] %}
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px 12px;"><code style="background:#F1F5F9; padding:2px 6px; border-radius:4px;">{{ kw }}</code></td>
+          <td style="padding:8px 12px; color:#475569;">{{ meal }}</td>
+          <td style="padding:8px 12px;">
+            <span style="display:inline-block; padding:2px 12px; border-radius:20px; font-size:12px; font-weight:700; background:{{ bg }}; color:{{ color }};">{{ meal }}</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     <div class="tip-box">
-      ✅ <strong>看到這個輸出，你就可以直接打電話給店家了！</strong><br>
-      照著「打電話叫餐總表」唸給老闆聽，完全不用自己算。
+      💡 不填餐別的話，系統會自動依照現在的時間判斷（7:30前=早餐，11:00前=午餐…）。有特殊需求再手動指定就好！
     </div>
     <div class="warn-box" style="margin-top:10px;">
       ⚠️ 代墊人代號是那個「今天要先幫大家付錢」的人的數字代號，不是名字！<br>
@@ -254,7 +307,7 @@
       </thead>
       <tbody>
         {% for cmd, desc in [
-          ('!點 [店家] [代墊人代號]', '開始點餐（最重要！）'),
+          ('!點 [餐別(選填)] [店家] [代墊人代號]', '開始點餐（最重要！）'),
           ('!今天吃什麼', '選擇困難救星，隨機推薦 3 家'),
           ('!吃什麼 / !隨機', '同上，換個說法也可以'),
           ('!菜單 [店家名稱]', '查詢並傳送菜單圖片'),
