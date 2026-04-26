@@ -299,16 +299,31 @@ def ocr_menu(sid):
         
         raw = chat_completion.choices[0].message.content.strip()
         
-        # 使用正規表達式提取 JSON 陣列，避免遇到開頭或結尾有廢話的狀況
-        match = re.search(r'\[.*\]', raw, re.DOTALL)
-        if match:
-            json_str = match.group(0)
-            parsed = json.loads(json_str)
-        else:
-            # Fallback 如果完全沒有中括號
-            raw = re.sub(r'^```[a-z]*\n?', '', raw)
-            raw = re.sub(r'\n?```$', '', raw)
-            parsed = json.loads(raw)
+        parsed = []
+        try:
+            # 嘗試找尋標準 JSON 陣列 [ ... ]
+            match = re.search(r'\[.*\]', raw, re.DOTALL)
+            if match:
+                parsed = json.loads(match.group(0))
+            else:
+                # 嘗試當作單一 JSON 解析
+                clean_raw = re.sub(r'^```[a-z]*\n?', '', raw)
+                clean_raw = re.sub(r'\n?```$', '', clean_raw).strip()
+                parsed = json.loads(clean_raw)
+        except Exception:
+            # 如果失敗（例如遇到 Extra data），可能是模型回傳了 JSONL (多行 JSON 物件)
+            # 使用正規表達式硬抓所有的 { ... }
+            objects = re.findall(r'\{[^{}]*\}', raw)
+            for obj_str in objects:
+                try:
+                    obj = json.loads(obj_str)
+                    if 'name' in obj:
+                        parsed.append(obj)
+                except:
+                    continue
+            
+            if not parsed:
+                raise ValueError(f"無法解析回傳格式，回傳內容前 100 字元: {raw[:100]}")
             
         session['ocr_result'] = parsed
         session['ocr_shop_id'] = sid
