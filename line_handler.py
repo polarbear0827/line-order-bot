@@ -71,7 +71,14 @@ class OrderBot:
             return 'dinner'
         return 'lunch'
 
-    # ─── 品項模糊比對 ──────────────────────────────────────────────
+    def clean_name(self, name):
+        import re, unicodedata
+        if not name: return ''
+        n = unicodedata.normalize('NFKC', name)
+        n = re.sub(r'[\u200b-\u200f\ufeff\u202a-\u202e\r\n]', '', n)
+        n = re.sub(r'\s+', ' ', n)
+        return n.strip()
+
     def match_menu_item(self, item_name, shop_id=None):
         """
         回傳 (MenuItem or None, confidence: 'exact'|'fuzzy'|'none')
@@ -83,15 +90,19 @@ class OrderBot:
         if not items:
             return None, 'none'
 
-        names = [i.name for i in items]
+        clean_item_name = self.clean_name(item_name)
+        names = [self.clean_name(i.name) for i in items]
+
         # 精確比對
-        for i in items:
-            if i.name == item_name:
+        for i, cname in zip(items, names):
+            if cname == clean_item_name:
                 return i, 'exact'
+
         # 模糊比對（threshold 75）
-        result = process.extractOne(item_name, names, scorer=fuzz.ratio)
+        from rapidfuzz import process, fuzz
+        result = process.extractOne(clean_item_name, names, scorer=fuzz.ratio)
         if result and result[1] >= 75:
-            matched = next(i for i in items if i.name == result[0])
+            matched = next(i for i, cname in zip(items, names) if cname == result[0])
             return matched, 'fuzzy'
         return None, 'none'
 

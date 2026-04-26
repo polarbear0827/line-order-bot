@@ -486,6 +486,20 @@ def toggle_paid(oid):
     db.session.commit()
     return redirect(request.referrer or url_for('accounting'))
 
+@app.route('/debug_menu')
+def debug_menu():
+    items = MenuItem.query.all()
+    result = []
+    for i in items:
+        result.append({
+            'id': i.id,
+            'shop_id': i.shop_id,
+            'name': repr(i.name),
+            'price': repr(i.price),
+            'is_available': i.is_available
+        })
+    return jsonify(result)
+
 @app.route('/orders/<int:oid>/amount', methods=['POST'])
 @login_required(admin_only=True)
 def update_order_amount(oid):
