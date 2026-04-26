@@ -487,6 +487,7 @@ def toggle_paid(oid):
     return redirect(request.referrer or url_for('accounting'))
 
 @app.route('/debug_menu')
+@login_required(admin_only=True)
 def debug_menu():
     items = MenuItem.query.all()
     result = []

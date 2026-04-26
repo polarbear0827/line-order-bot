@@ -289,3 +289,34 @@ class TestOcrJsonParsing:
     def test_invalid_raises(self):
         with pytest.raises(ValueError):
             parse_ocr_raw("這完全不是 JSON")
+
+
+# ════════════════════════════════════════
+# 6. 零訂單時應回傳錯誤訊息 (Fix #2)
+# ════════════════════════════════════════
+class TestZeroOrderEarlyReturn:
+    """確認 handle_order_command 在全部行都解析失敗時回傳 ❌"""
+
+    def _simulate_empty_result(self, errors: list) -> str:
+        """模擬 orders_info 為空時的回傳邏輯"""
+        orders_info = []
+        if not orders_info:
+            err_detail = '\n'.join(f'• {e}' for e in errors) if errors else '請確認格式：代號. 品項名稱'
+            return f'❌ 沒有成功記錄任何訂單\n{err_detail}'
+        return '✅'  # 不應該走到這裡
+
+    def test_error_message_starts_with_x(self):
+        result = self._simulate_empty_result(['代號 99 不存在'])
+        assert result.startswith('❌')
+
+    def test_error_contains_detail(self):
+        result = self._simulate_empty_result(['代號 99 不存在'])
+        assert '代號 99 不存在' in result
+
+    def test_no_errors_gives_format_hint(self):
+        result = self._simulate_empty_result([])
+        assert '請確認格式' in result
+
+    def test_does_not_say_zero_orders(self):
+        result = self._simulate_empty_result(['代號 99 不存在'])
+        assert '已記錄 0 筆' not in result

@@ -239,6 +239,11 @@ class OrderBot:
 
         db.session.commit()
 
+        # 如果完全沒有任何有效訂單，直接回傳錯誤，不要輸出「已記錄 0 筆」
+        if not orders_info:
+            err_detail = '\n'.join(f'• {e}' for e in errors) if errors else '請確認格式：代號. 品項名稱'
+            return f'❌ 沒有成功記錄任何訂單\n{err_detail}'
+
         # 回覆訊息
         meal_name = Config.MEAL_TYPES.get(meal_type, '未知')
         shop_name = shop.name if shop else '（未指定店家）'
@@ -262,7 +267,7 @@ class OrderBot:
         if fuzzy_warnings:
             reply += '\n' + '\n'.join(fuzzy_warnings)
         if errors:
-            reply += '\n⚠️ 錯誤：\n' + '\n'.join(f'• {e}' for e in errors)
+            reply += '\n⚠️ 部分行解析失敗：\n' + '\n'.join(f'• {e}' for e in errors)
         if any(o['amount'] == 0 for o in orders_info):
             reply += '\n💡 部分品項金額未知，請至後台補登'
 
