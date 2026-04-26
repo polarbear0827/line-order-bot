@@ -147,6 +147,7 @@ class OrderBot:
             db.session.commit()
 
         # 若有輸入店家名稱，尋找並更新 DailyMenu
+        business_day_warning = None
         if shop_name:
             shops = Shop.query.filter_by(is_active=True).all()
             if shops:
@@ -157,6 +158,12 @@ class OrderBot:
                     matched_shop = next(s for s in shops if s.name == result[0])
                     dm.shop_id = matched_shop.id
                     db.session.commit()
+                    # 檢查今天是否營業
+                    weekday = date.today().weekday()  # 0=Mon ... 6=Sun
+                    days = matched_shop.business_days or '1111111'
+                    if len(days) == 7 and days[weekday] == '0':
+                        day_names = ['一','二','三','四','五','六','日']
+                        business_day_warning = f'⚠️ 注意：【{matched_shop.name}】今天（週{day_names[weekday]}）可能沒有營業，請再次確認！'
 
         shop = dm.shop
 
@@ -244,13 +251,13 @@ class OrderBot:
             err_detail = '\n'.join(f'• {e}' for e in errors) if errors else '請確認格式：代號. 品項名稱'
             return f'❌ 沒有成功記錄任何訂單\n{err_detail}'
 
-        # 回覆訊息
+        # ─── Part 1：誰點了什麼 ───────────────────────
         meal_name = Config.MEAL_TYPES.get(meal_type, '未知')
-        shop_name = shop.name if shop else '（未指定店家）'
+        shop_display = shop.name if shop else '（未指定店家）'
         payer_info = f'{payer.user_code}. {payer.name}' if payer else '未指定'
 
         reply = f'✅ 已記錄 {len(orders_info)} 筆訂單\n'
-        reply += f'【{meal_name} - {today.strftime("%m/%d")}】{shop_name}\n'
+        reply += f'【{meal_name} - {today.strftime("%m/%d")}】{shop_display}\n'
         reply += f'💳 代墊：{payer_info}\n'
         reply += '─' * 20 + '\n'
 
@@ -261,9 +268,22 @@ class OrderBot:
             reply += f'{flag}{o["code"]}. {o["name"]}  {o["item"]}  {price_str}\n'
             total += o['amount']
 
+        # ─── Part 2：打電話叫餐總表 ──────────────────
         reply += '─' * 20 + '\n'
-        reply += f'共 ${int(total)}\n'
+        reply += f'📞 打電話叫餐總表\n'
+        from collections import Counter
+        item_counter = Counter(o['item'] for o in orders_info)
+        for item_display, count in sorted(item_counter.items()):
+            reply += f'🍱 {item_display} × {count}\n'
+        reply += '─' * 20 + '\n'
+        reply += f'共 {len(orders_info)} 份，總計 ${int(total)}\n'
+        reply += f'（請確認是否有人漏點）\n'
 
+        if shop and shop.phone:
+            reply += f'📱 {shop_display}：{shop.phone}\n'
+
+        if business_day_warning:
+            reply += f'\n{business_day_warning}'
         if fuzzy_warnings:
             reply += '\n' + '\n'.join(fuzzy_warnings)
         if errors:
@@ -436,6 +456,36 @@ class OrderBot:
 
 ══════════════════
 每晚 20:30 自動推播未付款提醒"""
+
+    # ─── !今天吃什麼 ──────────────────────────────────────────────
+    def handle_suggest_shops(self):
+        """隨機推薦最多 3 家今天有營業的店家"""
+        import random
+        weekday = date.today().weekday()  # 0=Mon ... 6=Sun
+        day_names = ['一','二','三','四','五','六','日']
+
+        shops = Shop.query.filter_by(is_active=True).all()
+        open_shops = [
+            s for s in shops
+            if (s.business_days or '1111111')[weekday] == '1'
+        ]
+
+        if not open_shops:
+            return f'😢 今天（週{day_names[weekday]}）找不到任何有營業的店家，可能是假日？'
+
+        picks = random.sample(open_shops, min(3, len(open_shops)))
+        reply = f'🎲 今天吃什麼？（隨機推薦，週{day_names[weekday]}）\n'
+        reply += '─' * 20 + '\n'
+        for i, s in enumerate(picks, 1):
+            items = MenuItem.query.filter_by(shop_id=s.id, is_available=True).limit(3).all()
+            sample = '、'.join(i.name for i in items) if items else '（尚無品項）'
+            reply += f'{i}️⃣ {s.name}'
+            if s.phone:
+                reply += f'  📞{s.phone}'
+            reply += f'\n   熱門：{sample}\n'
+        reply += '─' * 20 + '\n'
+        reply += '輸入 !菜單 [店家名稱] 看完整菜單'
+        return reply
 
     # ─── 每日統計 ─────────────────────────────────────────────────
     def generate_daily_unpaid_summary(self):

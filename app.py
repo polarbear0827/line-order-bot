@@ -210,18 +210,37 @@ def guide():
 @app.route('/shops/add', methods=['POST'])
 @login_required(admin_only=True)
 def add_shop():
-    import json
     name = request.form.get('name', '').strip()
     category = request.form.get('category', '')
     meal_types = request.form.getlist('meal_types')
+    phone = request.form.get('phone', '').strip()
+    business_days = ''.join(
+        '1' if request.form.get(f'day_{i}') else '0' for i in range(7)
+    )
     if not name:
         flash('請填寫店家名稱', 'error')
     else:
-        s = Shop(name=name, category=category)
+        s = Shop(name=name, category=category, phone=phone, business_days=business_days)
         s.meal_types = meal_types or ['lunch']
         db.session.add(s)
         db.session.commit()
         flash(f'✅ 已新增：{name}', 'success')
+    return redirect(url_for('manage_shops'))
+
+@app.route('/shops/edit/<int:sid>', methods=['POST'])
+@login_required(admin_only=True)
+def edit_shop(sid):
+    s = db.get_or_404(Shop, sid)
+    s.name = request.form.get('name', s.name).strip()
+    s.category = request.form.get('category', s.category)
+    s.phone = request.form.get('phone', '').strip()
+    meal_types = request.form.getlist('meal_types')
+    s.meal_types = meal_types or ['lunch']
+    s.business_days = ''.join(
+        '1' if request.form.get(f'day_{i}') else '0' for i in range(7)
+    )
+    db.session.commit()
+    flash(f'✅ 已更新：{s.name}', 'success')
     return redirect(url_for('manage_shops'))
 
 @app.route('/shops/toggle/<int:sid>', methods=['POST'])
@@ -598,8 +617,10 @@ def handle_text_message(event):
         return
     elif text.isdigit() or text.lower().startswith(('!bill', '！bill')):
         reply = order_bot.handle_bill_query(text)
-    elif text.lower().startswith(('!today', '！today', '!今日', '！今日', '!今天', '！今天')):
+    elif text.lower().startswith(('!today', '！today', '!今日', '！今日', '!今天', '！今天')) and not text.lower().startswith(('!今天吃', '！今天吃')):
         reply = order_bot.handle_today_summary()
+    elif text.lower().startswith(('!今天吃什麼', '！今天吃什麼', '!吃什麼', '！吃什麼', '!隨機', '！隨機')):
+        reply = order_bot.handle_suggest_shops()
     elif text.lower().startswith(('!結清', '！結清', '!checkout', '！checkout')):
         reply = order_bot.handle_checkout(text)
     elif text.lower().startswith(('!help', '！help', '!說明', '！說明')):

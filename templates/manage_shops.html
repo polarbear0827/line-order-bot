@@ -3,6 +3,38 @@
 {% block title %}店家管理{% endblock %}
 {% block page_title %}🏪 店家管理{% endblock %}
 
+{% block head %}
+<style>
+  .day-badges { display: flex; gap: 4px; flex-wrap: wrap; }
+  .day-badge {
+    width: 28px; height: 28px; border-radius: 6px; font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    background: #E2E8F0; color: #94A3B8;
+  }
+  .day-badge.open { background: #D1FAE5; color: #065F46; }
+  .day-toggle-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+  .day-toggle-label {
+    display: flex; flex-direction: column; align-items: center; gap: 3px;
+    cursor: pointer; font-size: 11px; color: #64748B;
+  }
+  .day-toggle-label input[type=checkbox] { display: none; }
+  .day-toggle-btn {
+    width: 32px; height: 32px; border-radius: 8px; border: 2px solid #E2E8F0;
+    background: #F8FAFC; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #94A3B8; transition: all 0.2s;
+  }
+  .day-toggle-label input:checked + .day-toggle-btn {
+    background: #D1FAE5; border-color: #34D399; color: #065F46;
+  }
+  .shop-edit-panel {
+    display: none; background: #F8FAFC; border-top: 1px solid var(--border);
+    padding: 16px 20px;
+  }
+  .shop-edit-panel.active { display: block; }
+  .edit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="grid-2">
   <div class="card">
@@ -10,47 +42,98 @@
       <h2 class="card-title">店家列表 ({{ shops|length }} 家)</h2>
     </div>
     <div class="card-body" style="padding: 0;">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>店家名稱</th>
-              <th>分類</th>
-              <th>狀態</th>
-              <th>菜單更新</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for s in shops %}
-            <tr>
-              <td class="font-semibold">{{ s.name }}</td>
-              <td>{{ categories.get(s.category, s.category) }}</td>
-              <td>
-                <form action="{{ url_for('toggle_shop', sid=s.id) }}" method="POST">
-                  {% if s.is_active %}
-                    <button type="submit" class="badge badge-success" style="border:none; cursor:pointer;">營業中</button>
-                  {% else %}
-                    <button type="submit" class="badge badge-neutral" style="border:none; cursor:pointer;">停用</button>
-                  {% endif %}
-                </form>
-              </td>
-              <td class="text-muted text-sm">{{ s.last_updated.strftime('%Y/%m/%d') if s.last_updated else '未設定' }}</td>
-              <td>
-                <div class="flex gap-2">
-                  <a href="{{ url_for('manage_menu', sid=s.id) }}" class="btn btn-secondary btn-sm">菜單</a>
-                  <form action="{{ url_for('delete_shop', sid=s.id) }}" method="POST" onsubmit="return confirm('確定刪除 {{ s.name }}？');" style="display:inline;">
-                    <button type="submit" class="btn btn-danger btn-sm">刪除</button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="5" style="text-align: center; padding: 30px; color: #64748B;">尚無店家</td></tr>
+      {% set DAY_NAMES = ['一','二','三','四','五','六','日'] %}
+      {% for s in shops %}
+      {% set days = s.business_days or '1111111' %}
+      <div style="border-bottom: 1px solid var(--border);">
+        <div style="display:flex; align-items:center; gap:12px; padding: 14px 16px; flex-wrap: wrap;">
+          <div style="flex:1; min-width:120px;">
+            <div class="font-semibold">{{ s.name }}</div>
+            <div class="text-muted text-sm">{{ categories.get(s.category, s.category) }}
+              {% if s.phone %} · 📞 {{ s.phone }}{% endif %}
+            </div>
+          </div>
+          <div class="day-badges">
+            {% for i in range(7) %}
+            <div class="day-badge {{ 'open' if days[i] == '1' else '' }}">{{ DAY_NAMES[i] }}</div>
             {% endfor %}
-          </tbody>
-        </table>
+          </div>
+          <div class="flex gap-2" style="align-items:center;">
+            <form action="{{ url_for('toggle_shop', sid=s.id) }}" method="POST" style="margin:0;">
+              {% if s.is_active %}
+                <button type="submit" class="badge badge-success" style="border:none;cursor:pointer;">營業中</button>
+              {% else %}
+                <button type="submit" class="badge badge-neutral" style="border:none;cursor:pointer;">停用</button>
+              {% endif %}
+            </form>
+            <a href="{{ url_for('manage_menu', sid=s.id) }}" class="btn btn-secondary btn-sm">菜單</a>
+            <button type="button" class="btn btn-secondary btn-sm"
+              onclick="toggleEdit('edit_{{ s.id }}')">編輯</button>
+            <form action="{{ url_for('delete_shop', sid=s.id) }}" method="POST"
+              onsubmit="return confirm('確定刪除 {{ s.name }}？');" style="margin:0;">
+              <button type="submit" class="btn btn-danger btn-sm">刪</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- 編輯展開面板 -->
+        <div id="edit_{{ s.id }}" class="shop-edit-panel">
+          <form action="{{ url_for('edit_shop', sid=s.id) }}" method="POST">
+            <div class="edit-grid">
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">店家名稱</label>
+                <input type="text" name="name" value="{{ s.name }}" class="form-control" required>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">電話號碼</label>
+                <input type="text" name="phone" value="{{ s.phone or '' }}" class="form-control" placeholder="例：02-1234-5678">
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">分類</label>
+                <select name="category" class="form-control">
+                  {% for k, v in categories.items() %}
+                  <option value="{{ k }}" {{ 'selected' if s.category == k }}>{{ v }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="form-group" style="margin:0;">
+                <label class="form-label">供應餐別</label>
+                <div class="flex gap-3" style="flex-wrap:wrap; padding-top:6px;">
+                  {% for val, label in [('breakfast','早餐'),('lunch','午餐'),('dinner','晚餐'),('snack','點心'),('drink','飲料')] %}
+                  <label class="flex items-center gap-2" style="font-size:13px;">
+                    <input type="checkbox" name="meal_types" value="{{ val }}"
+                      {{ 'checked' if val in s.meal_types }}>{{ label }}
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-top:12px;">
+              <label class="form-label">營業日</label>
+              <div class="day-toggle-row">
+                {% for i in range(7) %}
+                <label class="day-toggle-label">
+                  <input type="checkbox" name="day_{{ i }}"
+                    {{ 'checked' if days[i] == '1' }}>
+                  <div class="day-toggle-btn">{{ DAY_NAMES[i] }}</div>
+                  <span>{{ ['一','二','三','四','五','六','日'][i] }}</span>
+                </label>
+                {% endfor %}
+              </div>
+            </div>
+
+            <div class="flex gap-2 mt-4">
+              <button type="submit" class="btn btn-primary btn-sm">💾 儲存</button>
+              <button type="button" class="btn btn-secondary btn-sm"
+                onclick="toggleEdit('edit_{{ s.id }}')">取消</button>
+            </div>
+          </form>
+        </div>
       </div>
+      {% else %}
+      <div style="text-align:center; padding:30px; color:#64748B;">尚無店家</div>
+      {% endfor %}
     </div>
   </div>
 
@@ -64,6 +147,10 @@
           <div class="form-group">
             <label class="form-label">店家名稱</label>
             <input type="text" name="name" class="form-control" required placeholder="例如：天軍名饌">
+          </div>
+          <div class="form-group">
+            <label class="form-label">電話號碼</label>
+            <input type="text" name="phone" class="form-control" placeholder="例：02-1234-5678（選填）">
           </div>
           <div class="form-group">
             <label class="form-label">分類</label>
@@ -83,10 +170,29 @@
               <label class="flex items-center gap-2"><input type="checkbox" name="meal_types" value="drink"> 飲料</label>
             </div>
           </div>
+          <div class="form-group">
+            <label class="form-label">營業日</label>
+            <div class="day-toggle-row">
+              {% for i in range(7) %}
+              <label class="day-toggle-label">
+                <input type="checkbox" name="day_{{ i }}" checked>
+                <div class="day-toggle-btn">{{ ['一','二','三','四','五','六','日'][i] }}</div>
+                <span>{{ ['一','二','三','四','五','六','日'][i] }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
           <button type="submit" class="btn btn-primary">新增</button>
         </form>
       </div>
     </div>
   </div>
 </div>
+
+<script>
+function toggleEdit(id) {
+  const panel = document.getElementById(id);
+  panel.classList.toggle('active');
+}
+</script>
 {% endblock %}

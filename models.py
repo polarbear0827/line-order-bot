@@ -38,6 +38,8 @@ class Shop(db.Model):
     category = db.Column(db.String(50))        # bento / noodle / dumpling / snack / breakfast / drink
     meal_types_json = db.Column(db.String(200), default='["lunch"]')  # JSON list
     menu_image = db.Column(db.String(200))     # 菜單照片路徑
+    phone = db.Column(db.String(30))           # 店家電話
+    business_days = db.Column(db.String(7), default='1111111')  # Mon-Sun, 1=open, 0=closed
     last_updated = db.Column(db.DateTime, default=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
