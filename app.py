@@ -46,6 +46,18 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 with app.app_context():
     db.create_all()
+    # ── SQLite 欄位 Migration（安全加欄，已存在就跳過）──
+    with db.engine.connect() as conn:
+        for col, ddl in [
+            ('phone',         'ALTER TABLE shops ADD COLUMN phone VARCHAR(30)'),
+            ('business_days', 'ALTER TABLE shops ADD COLUMN business_days VARCHAR(7) DEFAULT "1111111"'),
+            ('note',          'ALTER TABLE orders ADD COLUMN note VARCHAR(200)'),
+        ]:
+            try:
+                conn.execute(db.text(ddl))
+                conn.commit()
+            except Exception:
+                pass  # 欄位已存在，忽略
     if not User.query.filter_by(is_admin=True).first():
         db.session.add(User(user_code='admin', name='管理員', is_admin=True))
         db.session.commit()
