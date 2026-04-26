@@ -110,16 +110,30 @@ class OrderBot:
     def handle_order_command(self, message_text, reply_token, group_id=None):
         """
         格式：
-        !點 [代墊人代號]
-        2. 肉羹飯
-        5. 沙茶牛肉炒麵
+        !點 [餐別(選填)] [店家] [代墊人代號]
+        餐別關鍵字：早餐/早 午餐/午 晚餐/晚 點心/下午茶 飲料/飲
         """
+        # 餐別關鍵字對應表
+        MEAL_KEYWORDS = {
+            '早餐': 'breakfast', '早': 'breakfast', 'breakfast': 'breakfast',
+            '午餐': 'lunch',     '午': 'lunch',     'lunch': 'lunch',
+            '晚餐': 'dinner',    '晚': 'dinner',    'dinner': 'dinner',
+            '點心': 'snack',     '下午茶': 'snack',  'snack': 'snack',
+            '飲料': 'drink',     '飲': 'drink',      'drink': 'drink',
+        }
+
         lines = message_text.strip().split('\n')
         first = lines[0].replace('!點', '').replace('！點', '').strip()
 
         parts = first.split()
+        forced_meal_type = None
         shop_name = None
         payer_code = None
+
+        # 如果第一個 token 是餐別關鍵字，先抽出來，剩下的才是店家 + 代墊人
+        if parts and parts[0].lower() in MEAL_KEYWORDS:
+            forced_meal_type = MEAL_KEYWORDS[parts[0].lower()]
+            parts = parts[1:]
 
         if len(parts) >= 2:
             shop_name = parts[0]
@@ -138,7 +152,7 @@ class OrderBot:
             return f'❌ 代墊人代號 {payer_code} 不存在'
 
         # 取得餐別 & 今日 DailyMenu
-        meal_type = self.get_current_meal_type()
+        meal_type = forced_meal_type if forced_meal_type else self.get_current_meal_type()
         today = date.today()
         dm = DailyMenu.query.filter_by(menu_date=today, meal_type=meal_type).first()
         if not dm:

@@ -3,6 +3,25 @@
 {% block title %}每日記帳{% endblock %}
 {% block page_title %}💰 每日記帳{% endblock %}
 
+{% block head %}
+<style>
+  .meal-breakfast { background: #EFF6FF; }
+  .meal-lunch     { background: #FEFCE8; }
+  .meal-dinner    { background: #F0FDF4; }
+  .meal-drink     { background: #FAF5FF; }
+  .meal-snack     { background: #FFF7ED; }
+  .meal-badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 11px; font-weight: 700; white-space: nowrap;
+  }
+  .meal-badge.breakfast { background: #BFDBFE; color: #1D4ED8; }
+  .meal-badge.lunch     { background: #FEF08A; color: #854D0E; }
+  .meal-badge.dinner    { background: #BBF7D0; color: #065F46; }
+  .meal-badge.drink     { background: #E9D5FF; color: #6B21A8; }
+  .meal-badge.snack     { background: #FED7AA; color: #9A3412; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="card mb-6">
   <div class="card-body flex items-center justify-between" style="padding: 16px 20px;">
@@ -47,8 +66,11 @@
       <table style="font-size: 13px;">
         <tbody>
           {% for o in data.orders %}
-          <tr>
-            <td style="width: 50px; color: var(--text-muted);">{{ meal_types.get(o.daily_menu.meal_type, o.daily_menu.meal_type) }}</td>
+          {% set mt = o.daily_menu.meal_type %}
+          <tr class="meal-{{ mt }}">
+            <td style="width: 60px;">
+              <span class="meal-badge {{ mt }}">{{ meal_types.get(mt, mt) }}</span>
+            </td>
             <td>{{ o.items }}</td>
             <td style="width: 70px; font-weight: 600;">
               <form action="{{ url_for('update_order_amount', oid=o.id) }}" method="POST" style="display: inline-flex; align-items: center; gap: 2px;">
