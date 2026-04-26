@@ -174,31 +174,65 @@ class OrderBot:
                 errors.append(f'無法解析：{line}')
                 continue
 
-            user_code, item_name = m.group(1), m.group(2).strip()
+            user_code, raw_item = m.group(1), m.group(2).strip()
             user = User.query.filter_by(user_code=user_code).first()
             if not user:
                 errors.append(f'代號 {user_code} 不存在')
                 continue
 
-            # 比對品項
-            menu_item, confidence = self.match_menu_item(item_name, shop_id=shop.id if shop else None)
+            # 解析可能的備註 (支援: 括號, 減號, 空格)
+            parsed_name = raw_item
+            parsed_remark = ""
+            
+            paren_match = re.search(r'[\(（](.*?)[\)）]?$', raw_item)
+            if paren_match:
+                parsed_remark = paren_match.group(1).strip()
+                parsed_name = raw_item[:paren_match.start()].strip()
+            elif '-' in raw_item or '－' in raw_item:
+                parts = re.split(r'\s*[-－]\s*', raw_item, maxsplit=1)
+                parsed_name = parts[0].strip()
+                parsed_remark = parts[1].strip()
+            else:
+                parts = raw_item.rsplit(maxsplit=1)
+                if len(parts) == 2:
+                    parsed_name = parts[0].strip()
+                    parsed_remark = parts[1].strip()
+
+            # 嘗試用拆分後的品名去比對
+            menu_item, confidence = self.match_menu_item(parsed_name, shop_id=shop.id if shop else None)
+            item_name = parsed_name
+            remark = parsed_remark
+            
+            # 若空格拆分失敗，有可能是品名自帶空格，退回使用完整字串比對
+            if confidence == 'none' and parsed_remark and not paren_match and '-' not in raw_item and '－' not in raw_item:
+                fallback_item, fallback_conf = self.match_menu_item(raw_item, shop_id=shop.id if shop else None)
+                if fallback_conf != 'none':
+                    menu_item, confidence = fallback_item, fallback_conf
+                    item_name = raw_item
+                    remark = ""
+
             amount = menu_item.price or 0.0 if menu_item else 0.0
 
             if confidence == 'fuzzy':
                 fuzzy_warnings.append(f'⚠️ {user_code}. {user.name}：「{item_name}」→ 比對為「{menu_item.name}」，請確認')
 
+            item_display = menu_item.name if menu_item else item_name
+            if remark:
+                item_display += f' ({remark})'
+
             order = Order(
                 user_id=user.id,
                 daily_menu_id=dm.id,
                 menu_item_id=menu_item.id if menu_item else None,
-                items=menu_item.name if menu_item else item_name,
+                items=item_display,
                 amount=amount,
                 payer_id=payer.id if payer else None,
+                note=remark
             )
             db.session.add(order)
             orders_info.append({
                 'code': user_code, 'name': user.name,
-                'item': menu_item.name if menu_item else item_name,
+                'item': item_display,
                 'amount': amount,
                 'warning': confidence == 'fuzzy',
             })
