@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}使用說明書{% endblock %}
+{% block page_title %}📖 學弟防呆使用說明書{% endblock %}
+
+{% block head %}
+<style>
+  .guide-container { max-width: 900px; margin: 0 auto; }
+  .guide-card {
+    background: #fff; border-radius: 16px; border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); padding: 32px; margin-bottom: 32px;
+    overflow: hidden; position: relative;
+  }
+  .guide-card-image {
+    width: 100%; border-radius: 12px; margin-bottom: 24px;
+    background: #F1F5F9; display: flex; justify-content: center; align-items: center;
+    overflow: hidden; max-height: 250px;
+  }
+  .guide-card-image img { width: 100%; height: auto; object-fit: cover; }
+  .guide-title { font-size: 24px; font-weight: 700; color: #1E293B; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; }
+  .guide-text { font-size: 15px; color: #475569; line-height: 1.7; margin-bottom: 20px; }
+  .guide-step { background: #F8FAFC; border-left: 4px solid var(--accent); padding: 16px 20px; border-radius: 0 8px 8px 0; margin-bottom: 16px; }
+  .guide-step strong { color: #0F172A; }
+  .command-box { background: #1E293B; color: #E2E8F0; padding: 12px 16px; border-radius: 8px; font-family: monospace; font-size: 14px; margin: 12px 0; }
+  .warning-box { background: #FEF2F2; border: 1px solid #FECACA; color: #991B1B; padding: 16px; border-radius: 8px; font-weight: 500; margin-top: 16px; display: flex; gap: 12px; align-items: flex-start;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="guide-container">
+  
+  <div class="alert alert-success" style="font-size: 16px; text-align: center; margin-bottom: 32px; padding: 20px; font-weight: 600;">
+    🎉 歡迎來到點餐系統！為了避免未來的學弟搞砸系統，請務必把這篇說明書看熟！
+  </div>
+
+  <!-- 章節 1：系統簡介 -->
+  <div class="guide-card">
+    <div class="guide-card-image">
+      <img src="{{ url_for('static', filename='images/guide_intro.png') }}" alt="點餐機器人">
+    </div>
+    <h2 class="guide-title">🌟 這個系統到底在幹嘛？</h2>
+    <p class="guide-text">
+      簡單來說，這是一個<strong>「LINE 機器人 + 後台管理」</strong>的點餐與記帳系統。<br>
+      每天會有值星或負責人發起點餐（或是大家自己在群組下指令），機器人會自動記錄每個人點了什麼、花了多少錢，然後算進他的「欠債總額」裡。<br>
+      你身為管理員，只要負責在後台上傳菜單、新增新人，偶爾幫忘記結帳的人點個「結清」就好！
+    </p>
+  </div>
+
+  <!-- 章節 2：LINE 機器人指令 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🤖 LINE 群組指令怎麼下？ (必讀)</h2>
+    <p class="guide-text">請在群組裡面直接輸入以下指令，機器人就會立刻回應你：</p>
+    
+    <div class="guide-step">
+      <strong>1. 點餐指令：<code>!點</code></strong>
+      <p class="guide-text" style="margin: 8px 0;">第一行打 <code>!點 [代墊人代號]</code>，下面每一行打 <code>[點餐人代號]. [品項]</code></p>
+      <div class="command-box">
+        !點 18<br>
+        2. 肉羹飯<br>
+        5. 沙茶牛肉炒麵
+      </div>
+      <div class="warning-box">
+        <span>⚠️</span>
+        <div><strong>防呆警告：</strong>請注意代號後面要加一個點（.）或是空格，而且品項名稱盡量跟菜單上一樣，不然機器人會看不懂喔！</div>
+      </div>
+    </div>
+
+    <div class="guide-step">
+      <strong>2. 看菜單：<code>!菜單 [店家名稱]</code></strong>
+      <div class="command-box">!菜單 麗媽</div>
+      <p class="guide-text" style="margin-top: 8px;">就算字打錯（例如莉媽），機器人也會聰明地找出最像的店家，並且把菜單圖片傳到群組裡！</p>
+    </div>
+
+    <div class="guide-step">
+      <strong>3. 查帳單與結清</strong>
+      <div class="command-box">
+        !bill 2  (查詢 2 號學長欠多少錢)<br>
+        !結清 2   (2 號學長掏出現金還錢了，幫他結清！)
+      </div>
+    </div>
+  </div>
+
+  <!-- 章節 3：上傳菜單 -->
+  <div class="guide-card">
+    <div class="guide-card-image">
+      <img src="{{ url_for('static', filename='images/guide_ocr.png') }}" alt="AI 掃描菜單">
+    </div>
+    <h2 class="guide-title">🏪 附近開了新店，怎麼上傳菜單？</h2>
+    <p class="guide-text">
+      這套系統內建了超級強大的 <strong>AI 視覺辨識（OCR）</strong> 功能！你再也不用一個字一個字把菜單敲進電腦裡了。
+    </p>
+    <div class="guide-step">
+      <strong>Step 1：</strong> 在左邊選單點擊「店家 / 菜單」，然後點擊「新增店家」。<br>
+      <strong>Step 2：</strong> 新增完成後，點進「管理菜單」，在右邊找到「上傳菜單 (AI 自動辨識)」。<br>
+      <strong>Step 3：</strong> 丟一張清晰的菜單照片上去，等個 5-10 秒，AI 就會自動幫你把所有品項跟價格填好！<br>
+      <strong>Step 4：</strong> 檢查一下 AI 有沒有眼殘看錯，沒問題就按下「全部儲存」。
+    </div>
+    <div class="warning-box">
+      <span>💣</span>
+      <div><strong>萬一 AI 大發神經抓出一堆亂碼怎麼辦？</strong><br>別慌！直接按下左邊列表上的紅色按鈕「一鍵清空全部」，然後再上傳一次即可。</div>
+    </div>
+  </div>
+
+  <!-- 章節 4：人員管理 -->
+  <div class="guide-card">
+    <h2 class="guide-title">👥 有新學弟來了，怎麼加人？</h2>
+    <p class="guide-text">
+      點擊左邊選單的「人員管理」，在右上角有一個「新增人員」。<br>
+      給他一個**專屬的代號（User Code）**，以後他在群組點餐就靠這個代號了！<br>
+      （通常代號就是座號或是某個好記的數字，不要亂編喔，不然他自己也會忘記）。
+    </p>
+  </div>
+
+  <!-- 章節 5：記帳與結清 -->
+  <div class="guide-card">
+    <div class="guide-card-image">
+      <img src="{{ url_for('static', filename='images/guide_money.png') }}" alt="記帳與金錢">
+    </div>
+    <h2 class="guide-title">💰 錢怎麼算？誰欠誰錢？</h2>
+    <p class="guide-text">
+      系統每天晚上 20:30 會自動在 LINE 群組發布「討債通知」，提醒還沒付錢的人趕快給錢。
+    </p>
+    <div class="guide-step">
+      <strong>收錢方法：</strong> 當有人拿現金給你時，你可以直接在群組輸入 <code>!結清 他的代號</code>。<br>
+      或是你也可以在後台的「每日記帳」頁面，找到他的名字，手動點擊「✅ 結清」按鈕。
+    </div>
+    <p class="guide-text" style="margin-top: 16px;">
+      就這麼簡單！祝你接下來接管系統的日子順順利利，不要被學長罵！😆
+    </p>
+  </div>
+
+</div>
+{% endblock %}

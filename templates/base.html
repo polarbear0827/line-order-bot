@@ -227,9 +227,12 @@
         <span class="icon">🏪</span> 店家 / 菜單
       </a>
 
-      <div class="nav-section" style="margin-top:8px">系統</div>
+      <div class="nav-section" style="margin-top:8px">系統與說明</div>
       <a href="{{ url_for('settings') }}" class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
         <span class="icon">⚙️</span> 設定
+      </a>
+      <a href="{{ url_for('guide') }}" class="nav-link {% if request.endpoint == 'guide' %}active{% endif %}">
+        <span class="icon">📖</span> 使用說明書
       </a>
     </div>
   </nav>

@@ -202,6 +202,18 @@ def manage_shops():
     return render_template('manage_shops.html', user=get_current_user(), shops=shops,
                            categories=app.config['SHOP_CATEGORIES'])
 
+@app.route('/history')
+@login_required(admin_only=True)
+def history():
+    today = date.today()
+    past_menus = DailyMenu.query.filter(DailyMenu.menu_date < today).order_by(DailyMenu.menu_date.desc()).all()
+    return render_template('history.html', menus=past_menus, user=get_current_user())
+
+@app.route('/guide')
+@login_required(admin_only=True)
+def guide():
+    return render_template('guide.html', user=get_current_user())
+
 @app.route('/shops/add', methods=['POST'])
 @login_required(admin_only=True)
 def add_shop():
