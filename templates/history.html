@@ -1,66 +1,189 @@
 {% extends "base.html" %}
-
-{% block title %}歷史紀錄{% endblock %}
+{% block title %}歷史訂單紀錄{% endblock %}
 {% block page_title %}📋 歷史訂單紀錄{% endblock %}
 
+{% block head %}
+<style>
+  .history-layout { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+
+  /* ── 日曆 ── */
+  .cal-card { background: #fff; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.05); overflow: hidden; position: sticky; top: 20px; }
+  .cal-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: #1E293B; color: #fff; }
+  .cal-header h3 { font-size: 15px; font-weight: 700; margin: 0; }
+  .cal-nav { background: rgba(255,255,255,0.15); border: none; color: #fff; border-radius: 8px; width: 30px; height: 30px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; text-decoration: none; transition: background 0.15s; }
+  .cal-nav:hover { background: rgba(255,255,255,0.3); }
+  .cal-weekdays { display: grid; grid-template-columns: repeat(7, 1fr); background: #F8FAFC; border-bottom: 1px solid var(--border); }
+  .cal-weekday { text-align: center; padding: 8px 0; font-size: 11px; font-weight: 700; color: #94A3B8; }
+  .cal-weekday:first-child { color: #EF4444; }  /* 日 */
+  .cal-weekday:last-child  { color: #3B82F6; }  /* 六 */
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); padding: 8px; gap: 3px; }
+  .cal-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 8px; font-size: 13px; cursor: default; position: relative;
+    color: #CBD5E1;
+  }
+  .cal-day.has-order {
+    background: #EFF6FF; color: #1E40AF; font-weight: 700; cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cal-day.has-order:hover { background: #DBEAFE; transform: scale(1.08); }
+  .cal-day.selected { background: #1E293B !important; color: #fff !important; font-weight: 700; }
+  .cal-day.today:not(.selected) { border: 2px solid var(--accent); color: #92400E; font-weight: 700; }
+  .cal-dot {
+    position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 4px; border-radius: 50%; background: #3B82F6;
+  }
+  .cal-day.selected .cal-dot { background: #93C5FD; }
+  .cal-legend { padding: 10px 18px 14px; font-size: 12px; color: #94A3B8; border-top: 1px solid var(--border); display: flex; gap: 14px; }
+  .cal-legend span { display: inline-flex; align-items: center; gap: 5px; }
+
+  /* ── 右側訂單 ── */
+  .orders-panel { min-height: 400px; }
+  .date-header { font-size: 18px; font-weight: 700; color: #1E293B; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .meal-section { margin-bottom: 20px; }
+  .meal-section-title {
+    font-size: 13px; font-weight: 700; padding: 6px 14px; border-radius: 20px;
+    display: inline-flex; align-items: center; gap: 6px; margin-bottom: 10px;
+  }
+  .mt-breakfast { background: #BFDBFE; color: #1D4ED8; }
+  .mt-lunch     { background: #FEF08A; color: #854D0E; }
+  .mt-dinner    { background: #BBF7D0; color: #065F46; }
+  .mt-drink     { background: #E9D5FF; color: #6B21A8; }
+  .mt-snack     { background: #FED7AA; color: #9A3412; }
+
+  .order-table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); font-size: 13px; margin-bottom: 4px; }
+  .order-table thead tr { background: #F8FAFC; }
+  .order-table th { padding: 10px 14px; text-align: left; color: #64748B; font-weight: 600; border-bottom: 1px solid var(--border); }
+  .order-table td { padding: 10px 14px; border-bottom: 1px solid #F1F5F9; }
+  .order-table tr:last-child td { border-bottom: none; }
+  .order-table tr:hover td { background: #F8FAFC; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: #94A3B8; }
+  .empty-state .emoji { font-size: 40px; display: block; margin-bottom: 10px; }
+
+  @media (max-width: 768px) {
+    .history-layout { grid-template-columns: 1fr; }
+    .cal-card { position: static; }
+  }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="card">
-  <div class="card-body" style="padding: 0;">
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>日期</th>
-            <th>餐別</th>
-            <th>點餐人</th>
-            <th>店家 / 品項</th>
-            <th>金額</th>
-            <th>狀態</th>
-            <th>代墊人</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for o in orders %}
-          <tr>
-            <td class="text-muted">{{ o.daily_menu.menu_date.strftime('%Y/%m/%d') }}</td>
-            <td>{{ meal_types.get(o.daily_menu.meal_type, o.daily_menu.meal_type) }}</td>
-            <td class="font-semibold">{{ o.user.user_code }}. {{ o.user.name }}</td>
-            <td>
-              {% if o.daily_menu.shop %}<span class="text-muted text-sm">[{{ o.daily_menu.shop.name }}]</span> {% endif %}
-              {{ o.items }}
-            </td>
-            <td>${{ o.amount|int }}</td>
-            <td>
-              {% if o.paid %}
-                <span class="badge badge-success">已付</span>
-              {% else %}
-                <span class="badge badge-warning">未付</span>
-              {% endif %}
-            </td>
-            <td class="text-muted text-sm">
-              {% if o.payer %}{{ o.payer.name }}{% else %}-{% endif %}
-            </td>
-          </tr>
+{% set MONTH_NAMES = ['','一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'] %}
+{% set MEAL_ICONS = {'breakfast':'🌅','lunch':'☀️','dinner':'🌙','drink':'🧋','snack':'🍡'} %}
+
+<div class="history-layout">
+
+  <!-- ── 左側日曆 ── -->
+  <div class="cal-card">
+    <div class="cal-header">
+      <a class="cal-nav" href="{{ url_for('history',
+          year=(cal_year if cal_month > 1 else cal_year-1),
+          month=(cal_month-1 if cal_month > 1 else 12)) }}">‹</a>
+      <h3>{{ cal_year }} 年 {{ MONTH_NAMES[cal_month] }}</h3>
+      <a class="cal-nav" href="{{ url_for('history',
+          year=(cal_year if cal_month < 12 else cal_year+1),
+          month=(cal_month+1 if cal_month < 12 else 1)) }}">›</a>
+    </div>
+
+    <div class="cal-weekdays">
+      {% for d in ['日','一','二','三','四','五','六'] %}
+      <div class="cal-weekday">{{ d }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="cal-grid">
+      {% set today_str = now.strftime('%Y-%m-%d') if now else '' %}
+      {% for week in cal %}
+        {% for day in week %}
+          {% if day == 0 %}
+          <div class="cal-day"></div>
           {% else %}
-          <tr><td colspan="7" style="text-align: center; padding: 30px; color: #64748B;">尚無歷史紀錄</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
+            {% set d_str = '%04d-%02d-%02d'|format(cal_year, cal_month, day) %}
+            {% set is_selected = (d_str == selected_date.strftime('%Y-%m-%d')) %}
+            {% set has_order   = (d_str in order_dates_set) %}
+            {% set is_today    = (d_str == today_str) %}
+            <a href="{{ url_for('history', date=d_str, year=cal_year, month=cal_month) if has_order else '#' }}"
+               class="cal-day {{ 'has-order' if has_order }} {{ 'selected' if is_selected }} {{ 'today' if is_today }}"
+               style="{{ 'text-decoration:none;' if has_order }}">
+              {{ day }}
+              {% if has_order %}<span class="cal-dot"></span>{% endif %}
+            </a>
+          {% endif %}
+        {% endfor %}
+      {% endfor %}
+    </div>
+
+    <div class="cal-legend">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3B82F6;"></span>有訂單</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#1E293B;"></span>選取中</span>
     </div>
   </div>
-</div>
 
-{% if pagination.pages > 1 %}
-<div class="flex gap-2 justify-center mt-4" style="margin-top: 20px; justify-content: center;">
-  {% if pagination.has_prev %}
-    <a href="{{ url_for('history', page=pagination.prev_num) }}" class="btn btn-secondary btn-sm">上一頁</a>
-  {% endif %}
-  <span class="text-muted text-sm flex items-center" style="padding: 0 10px;">
-    第 {{ pagination.page }} 頁 / 共 {{ pagination.pages }} 頁
-  </span>
-  {% if pagination.has_next %}
-    <a href="{{ url_for('history', page=pagination.next_num) }}" class="btn btn-secondary btn-sm">下一頁</a>
-  {% endif %}
+  <!-- ── 右側訂單 ── -->
+  <div class="orders-panel">
+    <div class="date-header">
+      📅 {{ selected_date.strftime('%Y 年 %m 月 %d 日') }}
+      {% if orders %}
+      <span style="font-size:14px; font-weight:400; color:#64748B;">共 {{ orders|length }} 筆訂單</span>
+      {% endif %}
+    </div>
+
+    {% if orders %}
+      {% set ns = namespace(cur_meal='') %}
+      {% for o in orders %}
+        {% set mt = o.daily_menu.meal_type %}
+        {% if mt != ns.cur_meal %}
+          {% if ns.cur_meal != '' %}</tbody></table></div>{% endif %}
+          {% set ns.cur_meal = mt %}
+          <div class="meal-section">
+          <div class="meal-section-title mt-{{ mt }}">
+            {{ MEAL_ICONS.get(mt,'🍽️') }} {{ meal_types.get(mt, mt) }}
+          </div>
+          <table class="order-table">
+            <thead>
+              <tr>
+                <th>代號</th><th>姓名</th><th>店家 / 品項</th><th>金額</th><th>狀態</th><th>代墊人</th>
+              </tr>
+            </thead>
+            <tbody>
+        {% endif %}
+            <tr>
+              <td class="font-semibold">{{ o.user.user_code }}</td>
+              <td>{{ o.user.name }}</td>
+              <td>
+                {% if o.daily_menu.shop %}<span class="text-muted text-sm">[{{ o.daily_menu.shop.name }}]</span> {% endif %}
+                {{ o.items }}
+              </td>
+              <td class="font-semibold">${{ o.amount|int }}</td>
+              <td>
+                {% if o.paid %}<span class="badge badge-success">已付</span>
+                {% else %}<span class="badge badge-warning">未付</span>{% endif %}
+              </td>
+              <td class="text-muted text-sm">
+                {% if o.payer %}{{ o.payer.user_code }}. {{ o.payer.name }}{% else %}-{% endif %}
+              </td>
+            </tr>
+      {% endfor %}
+      {% if orders %}</tbody></table></div>{% endif %}
+
+      <!-- 當日小計 -->
+      {% set total = orders|sum(attribute='amount') %}
+      {% set paid  = orders|selectattr('paid')|sum(attribute='amount') %}
+      <div style="margin-top:8px; padding:12px 16px; background:#F8FAFC; border-radius:10px; font-size:13px; display:flex; gap:24px; color:#475569;">
+        <span>總計 <strong style="color:#1E293B;">${{ total|int }}</strong></span>
+        <span>已收 <strong style="color:var(--success);">${{ paid|int }}</strong></span>
+        <span>未收 <strong style="color:var(--danger);">${{ (total-paid)|int }}</strong></span>
+      </div>
+
+    {% else %}
+    <div class="empty-state">
+      <span class="emoji">🗓️</span>
+      這天沒有任何訂單紀錄<br>
+      <span style="font-size:13px;">請從左邊日曆點選有訂單的日期（有藍點的）</span>
+    </div>
+    {% endif %}
+  </div>
+
 </div>
-{% endif %}
 {% endblock %}

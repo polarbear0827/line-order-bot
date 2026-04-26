@@ -558,12 +558,49 @@ def delete_order(oid):
 @app.route('/history')
 @login_required(admin_only=True)
 def history():
-    page = request.args.get('page', 1, type=int)
-    pagination = (Order.query.join(DailyMenu)
-                  .order_by(DailyMenu.menu_date.desc(), Order.created_date.desc())
-                  .paginate(page=page, per_page=50, error_out=False))
-    return render_template('history.html', user=get_current_user(),
-                           orders=pagination.items, pagination=pagination,
+    from sqlalchemy import distinct
+    # 所有有訂單的日期
+    dates_with_orders = [
+        row[0] for row in
+        db.session.query(distinct(DailyMenu.menu_date))
+        .join(Order, Order.daily_menu_id == DailyMenu.id)
+        .order_by(DailyMenu.menu_date.desc())
+        .all()
+    ]
+
+    # 選擇的日期（預設今天，若無訂單則取最近有訂單的日期）
+    date_str = request.args.get('date')
+    if date_str:
+        try:
+            selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = date.today()
+    else:
+        selected_date = dates_with_orders[0] if dates_with_orders else date.today()
+
+    # 該日訂單
+    orders = (Order.query.join(DailyMenu)
+              .filter(DailyMenu.menu_date == selected_date)
+              .order_by(DailyMenu.meal_type, Order.created_date)
+              .all())
+
+    # 日曆用：本月的有訂單日期 set
+    cal_year  = request.args.get('year',  selected_date.year,  type=int)
+    cal_month = request.args.get('month', selected_date.month, type=int)
+    order_dates_set = {d.strftime('%Y-%m-%d') for d in dates_with_orders}
+
+    import calendar
+    cal = calendar.monthcalendar(cal_year, cal_month)
+
+    return render_template('history.html',
+                           user=get_current_user(),
+                           orders=orders,
+                           selected_date=selected_date,
+                           cal_year=cal_year,
+                           cal_month=cal_month,
+                           cal=cal,
+                           order_dates_set=order_dates_set,
+                           now=date.today(),
                            meal_types=app.config['MEAL_TYPES'])
 
 # ── 設定 ────────────────────────────────────────────────
