@@ -298,16 +298,33 @@ def ocr_menu(sid):
         )
         
         raw = chat_completion.choices[0].message.content.strip()
-        # 去掉 markdown code block（如果有的話）
-        raw = re.sub(r'^```[a-z]*\n?', '', raw)
-        raw = re.sub(r'\n?```$', '', raw)
-        parsed = json.loads(raw)
+        
+        # 使用正規表達式提取 JSON 陣列，避免遇到開頭或結尾有廢話的狀況
+        match = re.search(r'\[.*\]', raw, re.DOTALL)
+        if match:
+            json_str = match.group(0)
+            parsed = json.loads(json_str)
+        else:
+            # Fallback 如果完全沒有中括號
+            raw = re.sub(r'^```[a-z]*\n?', '', raw)
+            raw = re.sub(r'\n?```$', '', raw)
+            parsed = json.loads(raw)
+            
         session['ocr_result'] = parsed
         session['ocr_shop_id'] = sid
         flash(f'✅ OCR 辨識完成，共 {len(parsed)} 個品項，請確認後儲存', 'success')
     except Exception as e:
         flash(f'❌ OCR 辨識失敗：{e}', 'error')
 
+    return redirect(url_for('manage_menu', sid=sid))
+
+@app.route('/shops/<int:sid>/menu/delete_all', methods=['POST'])
+@login_required(admin_only=True)
+def delete_all_menu_items(sid):
+    shop = db.get_or_404(Shop, sid)
+    MenuItem.query.filter_by(shop_id=shop.id).delete()
+    db.session.commit()
+    flash('✅ 已清空所有品項', 'success')
     return redirect(url_for('manage_menu', sid=sid))
 
 @app.route('/shops/<int:sid>/menu/save_ocr', methods=['POST'])

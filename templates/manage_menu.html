@@ -11,8 +11,13 @@
 <div class="grid-2">
   <!-- 左側：現有菜單 -->
   <div class="card">
-    <div class="card-header">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
       <h2 class="card-title">品項列表 ({{ items|length }} 項)</h2>
+      {% if items|length > 0 %}
+      <form action="{{ url_for('delete_all_menu_items', sid=shop.id) }}" method="POST" onsubmit="return confirm('確定要清空所有品項嗎？此操作無法復原！');" style="margin: 0;">
+        <button type="submit" class="btn btn-danger btn-sm">一鍵清空全部</button>
+      </form>
+      {% endif %}
     </div>
     <div class="card-body" style="padding: 0;">
       <div class="table-wrap">
