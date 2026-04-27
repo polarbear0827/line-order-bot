@@ -100,14 +100,20 @@ with app.app_context():
             u.must_change_pw = True
     db.session.commit()
 
-    # 建立 / 更新 Provider 帳號
-    prov_username = os.environ.get('PROVIDER_USERNAME', 'polarbear268')
-    prov_password = os.environ.get('PROVIDER_PASSWORD', '')
-    if prov_password:
+    # 建立 / 更新 Provider 帳號（支援多個：PROVIDER_USERNAME, PROVIDER_2_USERNAME...）
+    _provider_slots = [('PROVIDER_USERNAME', 'PROVIDER_PASSWORD', 'provider')]
+    for i in range(2, 10):
+        _provider_slots.append((f'PROVIDER_{i}_USERNAME', f'PROVIDER_{i}_PASSWORD', f'provider{i}'))
+
+    for ukey, pkey, code in _provider_slots:
+        prov_username = os.environ.get(ukey, '')
+        prov_password = os.environ.get(pkey, '')
+        if not prov_username or not prov_password:
+            continue
         provider = User.query.filter_by(username=prov_username).first()
         if not provider:
             provider = User(
-                user_code='provider', name='系統管理者',
+                user_code=code, name='系統管理者',
                 role='provider', is_admin=True,
                 username=prov_username, must_change_pw=False,
             )
