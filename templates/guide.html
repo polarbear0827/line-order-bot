@@ -34,6 +34,77 @@
     🎉 歡迎！這份手冊保證你看完就能操作，看不完的學弟請從頭再看一遍 😆
   </div>
 
+  <!-- 0. 角色與權限總覽 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🪪 帳號角色與功能權限</h2>
+    <p class="guide-text">這個系統共有三種角色，登入帳號不同、能看到的功能也不同：</p>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; margin-bottom:20px;">
+      <div style="background:#1E293B; color:#fff; border-radius:12px; padding:18px;">
+        <div style="font-size:22px; margin-bottom:8px;">👑</div>
+        <div style="font-size:15px; font-weight:700; margin-bottom:4px;">Provider</div>
+        <div style="font-size:12px; color:#94A3B8;">系統最高管理者<br>帳號：polarbear268</div>
+      </div>
+      <div style="background:#1D4ED8; color:#fff; border-radius:12px; padding:18px;">
+        <div style="font-size:22px; margin-bottom:8px;">🧑‍💼</div>
+        <div style="font-size:15px; font-weight:700; margin-bottom:4px;">Administrator</div>
+        <div style="font-size:12px; color:#BFDBFE;">替代役男<br>帳號：admin001、admin002…</div>
+      </div>
+      <div style="background:#065F46; color:#fff; border-radius:12px; padding:18px;">
+        <div style="font-size:22px; margin-bottom:8px;">🧑‍🚒</div>
+        <div style="font-size:15px; font-weight:700; margin-bottom:4px;">User</div>
+        <div style="font-size:12px; color:#A7F3D0;">消防員<br>帳號：user001、user002…</div>
+      </div>
+    </div>
+
+    <table style="width:100%; border-collapse:collapse; font-size:13px;">
+      <thead>
+        <tr style="background:#F8FAFC; border-bottom:2px solid var(--border);">
+          <th style="padding:10px 14px; text-align:left; color:#64748B;">功能</th>
+          <th style="padding:10px 14px; text-align:center; color:#64748B;">👑 Provider</th>
+          <th style="padding:10px 14px; text-align:center; color:#64748B;">🧑‍💼 Admin</th>
+          <th style="padding:10px 14px; text-align:center; color:#64748B;">🧑‍🚒 User</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in [
+          ('儀表板（全部訂單）',    True,  True,  False),
+          ('每日記帳',              True,  True,  False),
+          ('確認訂單',              True,  True,  False),
+          ('歷史記錄（日曆）',      True,  True,  False),
+          ('人員管理',              True,  True,  False),
+          ('店家 / 菜單',           True,  True,  False),
+          ('系統設定',              True,  False, False),
+          ('IP 封鎖管理',           True,  False, False),
+          ('登入記錄',              True,  False, False),
+          ('Admin 帳號管理',        True,  False, False),
+          ('查閱所有人密碼',        True,  False, False),
+          ('個人帳單',              True,  True,  True),
+          ('今天吃什麼',            True,  True,  True),
+          ('個人歷史消費 / 統計',   True,  True,  True),
+        ] %}
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:9px 14px; color:#1E293B;">{{ row[0] }}</td>
+          {% for has in [row[1], row[2], row[3]] %}
+          <td style="padding:9px 14px; text-align:center;">
+            {% if has %}
+              <span style="color:#059669; font-size:16px;">✅</span>
+            {% else %}
+              <span style="color:#CBD5E1; font-size:14px;">—</span>
+            {% endif %}
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="tip-box" style="margin-top:14px;">
+      💡 你現在看的這份手冊是 <strong>Administrator（替代役男）</strong> 的操作說明。消防員的使用說明在最下方 👇
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
   <!-- 1. 系統簡介 -->
   <div class="guide-card">
     <h2 class="guide-title">🌟 這個系統到底在幹嘛？</h2>
@@ -352,7 +423,70 @@
     </div>
   </div>
 
-  <!-- 12. 聯絡 -->
+  <!-- 13. 消防員（User）使用說明 -->
+  <hr class="section-divider">
+  <div class="guide-card" style="border: 2px solid #BBF7D0;">
+    <h2 class="guide-title">🧑‍🚒 消防員（User）個人入口使用說明</h2>
+    <p class="guide-text">消防員使用獨立帳號登入，只看得到跟自己有關的資訊，介面簡單清楚。</p>
+
+    <div class="cmd-label">帳號格式</div>
+    <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:8px; padding:14px 18px; font-size:13px; margin-bottom:16px;">
+      帳號：<code>user001</code>（user + 三位數代號，例如代號 1 → user001，代號 21 → user021）<br>
+      初始密碼：管理員建立帳號時自動生成的 <strong>4 位數字</strong>（請向替代役男詢問）<br>
+      建議第一次登入後立即到「個人設定」改密碼！
+    </div>
+
+    <div class="cmd-label" style="margin-top:14px;">登入後可以看到什麼？</div>
+    <div style="display:grid; gap:12px; margin-bottom:16px;">
+
+      <div style="background:#F0FDF4; border-left:4px solid #059669; padding:14px 18px; border-radius:0 8px 8px 0;">
+        <strong>🍱 今日點餐</strong><br>
+        <span style="font-size:13px; color:#475569;">今天點了什麼、哪一餐、哪家店，一眼看清楚</span>
+      </div>
+
+      <div style="background:#F0FDF4; border-left:4px solid #059669; padding:14px 18px; border-radius:0 8px 8px 0;">
+        <strong>💸 目前欠款</strong><br>
+        <span style="font-size:13px; color:#475569;">目前還有多少錢沒付、欠誰的，清楚列出</span>
+      </div>
+
+      <div style="background:#F0FDF4; border-left:4px solid #059669; padding:14px 18px; border-radius:0 8px 8px 0;">
+        <strong>📅 歷史消費紀錄</strong><br>
+        <span style="font-size:13px; color:#475569;">可以選擇日期範圍，查自己在這段時間總共吃了多少錢、每一餐點了什麼</span>
+      </div>
+
+      <div style="background:#F0FDF4; border-left:4px solid #059669; padding:14px 18px; border-radius:0 8px 8px 0;">
+        <strong>🔐 改密碼</strong><br>
+        <span style="font-size:13px; color:#475569;">設定自己的密碼（4–8 位，數字或英數混合皆可）</span>
+      </div>
+    </div>
+
+    <div class="warn-box">
+      ⚠️ User 帳號<strong>無法</strong>看到其他消防員的訂單、金額或個人資料，只看得到自己的。<br>
+      如果帳號忘記密碼，請找替代役男（Admin）或聯絡系統管理者重設。
+    </div>
+  </div>
+
+  <!-- 14. Provider 說明 -->
+  <div class="guide-card" style="border: 2px solid #E9D5FF;">
+    <h2 class="guide-title">👑 Provider 最高管理者功能</h2>
+    <p class="guide-text">Provider 帳號僅限系統管理者使用，除了擁有所有 Admin 功能之外，還額外提供：</p>
+    <div style="display:grid; gap:10px;">
+      {% for item in [
+        ('🛡️ IP 封鎖管理', '查看哪些 IP 因為多次輸入錯誤密碼被自動封鎖，也可以手動解鎖'),
+        ('📋 登入記錄', '查看所有帳號的登入時間、IP、成功或失敗的完整紀錄'),
+        ('👥 Admin 帳號管理', '新增或刪除替代役男的 Admin 帳號，並設定初始密碼'),
+        ('🔑 密碼查閱', '當消防員忘記密碼時，Provider 可以調閱原始密碼告知當事人'),
+        ('⚙️ 系統設定', '修改每日催帳提醒的時間等系統參數'),
+      ] %}
+      <div style="background:#FAF5FF; border-left:4px solid #7C3AED; padding:12px 16px; border-radius:0 8px 8px 0;">
+        <strong>{{ item[0] }}</strong><br>
+        <span style="font-size:13px; color:#475569;">{{ item[1] }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 聯絡 -->
   <div class="guide-card">
     <h2 class="guide-title">🆘 遇到 Bug 或想許願新功能？</h2>
     <p class="guide-text">
