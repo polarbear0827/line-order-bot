@@ -160,3 +160,17 @@ class SystemSetting(db.Model):
         else:
             row = SystemSetting(key=key, value=str(value))
             db.session.add(row)
+
+
+class IpBan(db.Model):
+    """IP 登入失敗封鎖記錄"""
+    __tablename__ = 'ip_bans'
+
+    id = db.Column(db.Integer, primary_key=True)
+    ip = db.Column(db.String(50), unique=True, nullable=False, index=True)
+    fail_count = db.Column(db.Integer, default=0)      # 累計失敗次數（永不清零）
+    banned_until = db.Column(db.DateTime, nullable=True)  # None = 目前未封鎖
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<IpBan {self.ip} fails={self.fail_count}>'

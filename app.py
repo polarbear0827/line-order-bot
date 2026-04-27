@@ -8,7 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 import pytz
 
 from config import Config
-from models import db, User, Shop, MenuItem, DailyMenu, Order, LineMessage, SystemSetting
+from models import db, User, Shop, MenuItem, DailyMenu, Order, LineMessage, SystemSetting, IpBan
 
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
@@ -18,6 +18,7 @@ from linebot.v3.webhooks import MessageEvent, TextMessageContent
 # ── 初始化 ──────────────────────────────────────────────
 app = Flask(__name__)
 app.config.from_object(Config)
+app.config['PERMANENT_SESSION_LIFETIME'] = __import__('datetime').timedelta(hours=8)
 db.init_app(app)
 
 configuration = Configuration(access_token=app.config['LINE_CHANNEL_ACCESS_TOKEN'])
@@ -86,6 +87,63 @@ def login_required(admin_only=False):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
+# ── IP 封鎖工具 ─────────────────────────────────────────
+from datetime import timedelta
+
+# 累計失敗次數 → 封鎖時長（只在剛好踩到門檻時觸發）
+_BAN_THRESHOLDS = {
+    5:  timedelta(hours=1),
+    8:  timedelta(hours=6),
+    11: timedelta(days=1),
+    14: timedelta(days=7),
+    17: timedelta(days=30),
+}
+
+def _get_client_ip():
+    """取得真實 IP（支援 ngrok / 反向代理的 X-Forwarded-For）"""
+    return request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
+
+def _ban_duration_for(fail_count):
+    """根據累計失敗次數回傳應封鎖時長，不是門檻時回傳 None"""
+    if fail_count in _BAN_THRESHOLDS:
+        return _BAN_THRESHOLDS[fail_count]
+    # fail >= 20，之後每 3 次封鎖 6 個月
+    if fail_count >= 20 and (fail_count - 17) % 3 == 0:
+        return timedelta(days=180)
+    return None
+
+def _check_ip_banned(ip):
+    """回傳 (is_banned: bool, banned_until: datetime|None)"""
+    record = IpBan.query.filter_by(ip=ip).first()
+    if not record or not record.banned_until:
+        return False, None
+    if record.banned_until > datetime.utcnow():
+        return True, record.banned_until
+    return False, None
+
+def _record_fail(ip):
+    """記錄一次失敗，若踩到門檻就寫入封鎖時間，回傳 IpBan record"""
+    record = IpBan.query.filter_by(ip=ip).first()
+    if not record:
+        record = IpBan(ip=ip, fail_count=0)
+        db.session.add(record)
+    record.fail_count += 1
+    record.updated_at = datetime.utcnow()
+    duration = _ban_duration_for(record.fail_count)
+    if duration:
+        record.banned_until = datetime.utcnow() + duration
+    db.session.commit()
+    return record
+
+def _record_success(ip):
+    """登入成功：重置封鎖（但保留 fail_count 作為記錄）"""
+    record = IpBan.query.filter_by(ip=ip).first()
+    if record:
+        record.banned_until = None
+        record.fail_count = 0
+        record.updated_at = datetime.utcnow()
+        db.session.commit()
+
 # ── 認證 ────────────────────────────────────────────────
 @app.route('/')
 def index():
@@ -93,14 +151,35 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    ip = _get_client_ip()
     if request.method == 'POST':
+        # 先檢查 IP 是否被封鎖
+        is_banned, banned_until = _check_ip_banned(ip)
+        if is_banned:
+            tw_tz = __import__('pytz').timezone('Asia/Taipei')
+            until_tw = banned_until.replace(tzinfo=__import__('pytz').utc).astimezone(tw_tz)
+            flash(f'此 IP 已被封鎖，解鎖時間：{until_tw.strftime("%Y/%m/%d %H:%M")}', 'error')
+            return render_template('login.html')
+
         key = request.form.get('access_key', '').strip()
         if key == app.config['ADMIN_ACCESS_KEY']:
             admin = User.query.filter_by(is_admin=True).first()
             session['user_id'] = admin.id
             session.permanent = True
+            _record_success(ip)
             return redirect(url_for('dashboard'))
-        flash('金鑰錯誤', 'error')
+
+        # 密碼錯誤
+        record = _record_fail(ip)
+        remaining = 5 - record.fail_count if record.fail_count < 5 else 0
+        if record.banned_until and record.banned_until > datetime.utcnow():
+            tw_tz = __import__('pytz').timezone('Asia/Taipei')
+            until_tw = record.banned_until.replace(tzinfo=__import__('pytz').utc).astimezone(tw_tz)
+            flash(f'金鑰錯誤次數過多，IP 已封鎖至 {until_tw.strftime("%Y/%m/%d %H:%M")}', 'error')
+        elif record.fail_count < 5:
+            flash(f'金鑰錯誤（還有 {5 - record.fail_count} 次機會）', 'error')
+        else:
+            flash(f'金鑰錯誤（累計 {record.fail_count} 次失敗）', 'error')
     return render_template('login.html')
 
 @app.route('/logout')
