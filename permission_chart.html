@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>消防局點餐系統 — 完整操作指南</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+      background: #F0F4F8;
+      min-height: 100vh;
+      padding: 40px 20px 80px;
+      color: #1E293B;
+      line-height: 1.6;
+    }
+    .page { max-width: 1000px; margin: 0 auto; }
+    
+    /* Header */
+    .header { text-align: center; margin-bottom: 50px; }
+    .header .emoji { font-size: 64px; display: block; margin-bottom: 16px; }
+    .header h1 { font-size: 32px; font-weight: 800; color: #1E293B; margin-bottom: 12px; }
+    .header p  { font-size: 16px; color: #64748B; max-width: 600px; margin: 0 auto; }
+
+    /* Sections */
+    .section {
+      background: #fff;
+      border-radius: 20px;
+      padding: 36px 40px;
+      margin-bottom: 32px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+    }
+    .section-title {
+      font-size: 24px; font-weight: 800; margin-bottom: 24px;
+      display: flex; align-items: center; gap: 12px;
+      padding-bottom: 16px; border-bottom: 2px solid #F1F5F9;
+    }
+    .section-title .icon { font-size: 28px; }
+
+    /* Role cards */
+    .role-cards {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 32px;
+    }
+    .role-card {
+      border-radius: 16px; padding: 24px; text-align: center; position: relative; overflow: hidden;
+    }
+    .role-card::before {
+      content: ''; position: absolute; top: -30px; right: -30px; width: 100px; height: 100px;
+      border-radius: 50%; opacity: 0.12;
+    }
+    .role-card.provider { background: linear-gradient(135deg, #1E293B, #334155); color: #fff; }
+    .role-card.provider::before { background: #F59E0B; }
+    .role-card.admin    { background: linear-gradient(135deg, #1D4ED8, #2563EB); color: #fff; }
+    .role-card.admin::before   { background: #93C5FD; }
+    .role-card.user     { background: linear-gradient(135deg, #065F46, #059669); color: #fff; }
+    .role-card.user::before    { background: #6EE7B7; }
+
+    .role-icon  { font-size: 40px; margin-bottom: 12px; display: block; }
+    .role-name  { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+    .role-who   { font-size: 13px; opacity: 0.8; margin-bottom: 14px; }
+    .role-acc   { font-family: monospace; font-size: 13px; background: rgba(255,255,255,0.15);
+                  border-radius: 8px; padding: 6px 14px; display: inline-block; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    thead tr { background: #F8FAFC; }
+    th { padding: 14px 20px; font-size: 14px; font-weight: 700; color: #475569; text-align: center; border-bottom: 2px solid #E2E8F0; }
+    th:first-child { text-align: left; width: 35%; }
+    td { padding: 14px 20px; font-size: 14px; border-bottom: 1px solid #F1F5F9; text-align: center; vertical-align: middle; }
+    td:first-child { text-align: left; font-weight: 500; color: #1E293B; }
+    .section-row td { background: #F8FAFC; font-weight: 700; font-size: 13px; color: #64748B; text-transform: uppercase; padding: 10px 20px; border-bottom: 1px solid #E2E8F0; text-align: left; }
+    .check { color: #059669; font-size: 20px; }
+    .cross { color: #CBD5E1; font-size: 18px; }
+
+    /* Commands */
+    .cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .cmd-item { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 16px; }
+    .cmd-item strong { display: inline-block; background: #E2E8F0; padding: 4px 8px; border-radius: 6px; font-family: monospace; color: #1E293B; margin-bottom: 8px; font-size: 14px; }
+    .cmd-item p { font-size: 14px; color: #475569; margin: 0; }
+
+    /* Steps */
+    .step-list { counter-reset: step; list-style: none; }
+    .step-list li { position: relative; padding-left: 48px; margin-bottom: 24px; }
+    .step-list li::before {
+      counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
+      width: 32px; height: 32px; background: #F59E0B; color: #fff; font-weight: 700;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px;
+    }
+    .step-list h4 { font-size: 16px; font-weight: 700; color: #1E293B; margin-bottom: 8px; }
+    .step-list p { font-size: 14px; color: #475569; margin-bottom: 8px; }
+    .step-list .note { background: #FEF3C7; color: #92400E; padding: 10px 14px; border-radius: 8px; font-size: 13px; border-left: 4px solid #F59E0B; margin-top: 8px; }
+
+    /* Typography */
+    h3 { font-size: 18px; font-weight: 700; margin: 24px 0 16px; color: #0F172A; }
+    ul.disc { padding-left: 20px; margin-bottom: 16px; font-size: 14px; color: #475569; }
+    ul.disc li { margin-bottom: 6px; }
+    .highlight { background: #FEF08A; padding: 0 4px; border-radius: 4px; color: #854D0E; font-weight: 600; }
+
+    @media (max-width: 768px) {
+      .role-cards { grid-template-columns: 1fr; }
+      .cmd-grid { grid-template-columns: 1fr; }
+      .section { padding: 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <span class="emoji">🍱</span>
+    <h1>消防局點餐系統 — 完整推廣與操作指南</h1>
+    <p>這是一份從 0 到 1 的教學指南。協助推廣者（Provider）快速了解系統架構，並能指導替代役男（Admin）與消防員（User）順利上線使用。</p>
+  </div>
+
+  <!-- 1. 權限架構 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">👑</span> 1. 三層權限架構解析</div>
+    <div class="role-cards">
+      <div class="role-card provider">
+        <span class="role-icon">👑</span>
+        <div class="role-name">Provider</div>
+        <div class="role-who">系統最高管理者 (推廣學長)</div>
+        <div class="role-acc">預設: polarbear268</div>
+      </div>
+      <div class="role-card admin">
+        <span class="role-icon">🧑‍💼</span>
+        <div class="role-name">Admin</div>
+        <div class="role-who">替代役男 (日常維護)</div>
+        <div class="role-acc">自動生成: admin001...</div>
+      </div>
+      <div class="role-card user">
+        <span class="role-icon">🧑‍🚒</span>
+        <div class="role-name">User</div>
+        <div class="role-who">消防員 (點餐者)</div>
+        <div class="role-acc">自動生成: user001...</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>功能權限差異</th>
+          <th style="color:#1E293B">👑 Provider</th>
+          <th style="color:#1D4ED8">🧑‍💼 Admin</th>
+          <th style="color:#059669">🧑‍🚒 User</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="section-row"><td colspan="4">管理與後台功能</td></tr>
+        <tr><td>建立/刪除 Admin 帳號</td><td><span class="check">✅</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td>解除登入錯誤的 IP 封鎖</td><td><span class="check">✅</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td>查閱所有人原始密碼</td><td><span class="check">✅</span></td><td><span class="cross">—</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td>編輯菜單、新增店家</td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td>新增/刪除 消防員名單</td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="cross">—</span></td></tr>
+        <tr><td>每日記帳結算、代墊</td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="cross">—</span></td></tr>
+        <tr class="section-row"><td colspan="4">個人功能</td></tr>
+        <tr><td>使用 LINE Bot 點餐</td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="check">✅</span></td></tr>
+        <tr><td>查看個人欠款與歷史點餐</td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="check">✅</span></td></tr>
+        <tr><td>修改自己登入密碼</td><td><span class="check">✅</span></td><td><span class="check">✅</span></td><td><span class="check">✅</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 2. Provider 教學 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🚀</span> 2. Provider (推廣者) 起手式</div>
+    <p style="margin-bottom:20px; font-size:15px; color:#475569;">作為系統管理者，你的主要任務是「維護系統安全」並「交接給替代役男」。</p>
+    
+    <ol class="step-list">
+      <li>
+        <h4>登入最高權限後台</h4>
+        <p>進入系統網頁後，輸入你的專屬帳號 (預設為 `polarbear268` 或 `Fangyuan`) 及密碼，登入後會在左側選單看到專屬的 <strong>「👑 管理者後台」</strong>。</p>
+      </li>
+      <li>
+        <h4>建立替代役男 (Admin) 帳號</h4>
+        <p>在「管理者後台 > Admin 管理」中，輸入當前負責處理點餐的替代役男姓名。系統會自動生成一組 <code>admin00X</code> 的帳號及隨機的 4 位數密碼。請將這組帳號密碼交給替代役男。</p>
+        <div class="note">役男第一次登入時，系統會強制要求他修改密碼。交接或退役時，你可以直接在這裡刪除舊帳號，並建立新帳號給下一位學弟。</div>
+      </li>
+      <li>
+        <h4>處理消防員忘記密碼</h4>
+        <p>當學長忘記密碼時，請他找你。在「管理者後台 > 密碼查閱」中，點擊該學長的密碼欄位，即可顯示他的原始密碼。</p>
+      </li>
+      <li>
+        <h4>解除 IP 封鎖</h4>
+        <p>系統有防暴力破解機制，登入錯誤 5 次以上會暫時封鎖該網路 IP。如果有人不小心被鎖了，你可以在「IP 封鎖」分頁手動將其解除。</p>
+      </li>
+    </ol>
+  </div>
+
+  <!-- 3. Admin 教學 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🧑‍💼</span> 3. Admin (替代役男) 日常作業</div>
+    <p style="margin-bottom:20px; font-size:15px; color:#475569;">替代役男負責維護菜單以及處理每天的算錢與結帳。</p>
+
+    <ol class="step-list">
+      <li>
+        <h4>初次設定：建立消防員名單</h4>
+        <p>進入「👥 人員管理」，可以逐筆新增消防員的代號與姓名（例如：代號 1, 姓名 王大明），或者直接上傳 Excel 批次匯入。</p>
+        <p>建立人員的同時，系統會<span class="highlight">自動生成</span>該員的登入帳號（預設為 <code>user + 代號</code>，如 <code>user001</code>）與 4 位數初始密碼，請統一公布給學長們。</p>
+      </li>
+      <li>
+        <h4>初次設定：建立店家與菜單</h4>
+        <p>進入「🏪 店家 / 菜單」，點擊「新增店家」。接著點入該店家，使用 <strong>上傳菜單照片 (AI 辨識)</strong> 功能，系統會自動將照片轉換為文字菜單及價格。請手動微調有錯漏的文字後儲存。</p>
+      </li>
+      <li>
+        <h4>每日作業：結算與記帳</h4>
+        <p>當大家在 LINE 點完餐後，進入「💰 每日記帳」。</p>
+        <ul class="disc">
+          <li>查看今天有誰點餐，並點擊右上方按鈕將未標價的品項快速填上價格。</li>
+          <li>點餐送達後，可以在此頁面直接點擊「未付 / 已付」切換付款狀態。</li>
+          <li>如果有學長幫別人代墊，可以點擊該筆訂單的「無代墊」，選擇是誰幫忙付的錢，系統會自動轉移債務關係。</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+
+  <!-- 4. User 教學 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">🧑‍🚒</span> 4. User (消防員) 操作說明</div>
+    <p style="margin-bottom:20px; font-size:15px; color:#475569;">學長們平時只要在 LINE 群組點餐即可。網頁版主要用來查帳。</p>
+
+    <ol class="step-list">
+      <li>
+        <h4>在 LINE 群組點餐</h4>
+        <p>請參考下方的「LINE 指令大全」。最常用的就是 <code>!點</code> 指令。例如午餐想吃排骨飯，就在群組輸入 <code>!點 午餐 排骨飯</code> 即可。</p>
+      </li>
+      <li>
+        <h4>登入個人入口查帳</h4>
+        <p>進入網頁版，輸入自己的帳號 (如 <code>user001</code>) 與初始密碼。第一次登入會被要求改密碼。</p>
+        <p>登入後會進入專屬的 <strong>「🧑‍🚒 個人入口」</strong>：</p>
+        <ul class="disc">
+          <li><strong>今日點餐：</strong>看今天自己點了什麼。</li>
+          <li><strong>未付款明細：</strong>看自己目前總共欠了多少錢、欠誰錢。</li>
+          <li><strong>歷史消費：</strong>可以選取日期區間，看看上個月吃掉多少伙食費。</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+
+  <!-- 5. LINE 指令大全 -->
+  <div class="section">
+    <div class="section-title"><span class="icon">📱</span> 5. LINE Bot 指令大全</div>
+    <p style="margin-bottom:20px; font-size:15px; color:#475569;">在群組中輸入以下指令即可與機器人互動（注意：驚嘆號需為半形 <code>!</code>）。</p>
+
+    <div class="cmd-grid">
+      <div class="cmd-item">
+        <strong>!點 [餐別] [品項]</strong>
+        <p>例如：<code>!點 午餐 雞腿便當</code><br>系統會自動辨識你是誰，並記錄訂單。</p>
+      </div>
+      <div class="cmd-item">
+        <strong>!取消 [餐別]</strong>
+        <p>例如：<code>!取消 午餐</code><br>取消你今天該餐別的點餐紀錄。</p>
+      </div>
+      <div class="cmd-item">
+        <strong>!吃什麼</strong>
+        <p>列出今天午餐、晚餐等已經決定的店家名稱及菜單連結。</p>
+      </div>
+      <div class="cmd-item">
+        <strong>!誰沒點 [餐別]</strong>
+        <p>例如：<code>!誰沒點 午餐</code><br>列出群組內還沒有點餐的學長名單。</p>
+      </div>
+      <div class="cmd-item">
+        <strong>!查帳</strong>
+        <p>私訊或在群組輸入，機器人會列出你目前所有未付款的欠帳明細與總金額。</p>
+      </div>
+      <div class="cmd-item">
+        <strong>!統計 [餐別]</strong>
+        <p>例如：<code>!統計 午餐</code><br>顯示目前午餐的點餐總數量（例如：排骨飯 x3, 雞腿飯 x2），方便打電話叫餐。</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
