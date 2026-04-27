@@ -298,6 +298,21 @@ def manage_shops():
 def guide():
     return render_template('guide.html', user=get_current_user())
 
+@app.route('/guide/admin')
+@login_required(admin_only=True)
+def guide_admin():
+    return render_template('guide_admin.html', user=get_current_user())
+
+@app.route('/guide/user')
+@login_required(admin_only=True)
+def guide_user():
+    return render_template('guide_user.html', user=get_current_user())
+
+@app.route('/guide/provider')
+@login_required(admin_only=True)
+def guide_provider():
+    return render_template('guide_provider.html', user=get_current_user())
+
 @app.route('/shops/add', methods=['POST'])
 @login_required(admin_only=True)
 def add_shop():

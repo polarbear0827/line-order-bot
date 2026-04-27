@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+{% block title %}替代役男操作手冊{% endblock %}
+{% block page_title %}📖 替代役男操作手冊{% endblock %}
+
+{% block head %}
+<style>
+  .guide-container { max-width: 860px; margin: 0 auto; }
+  .guide-card { background: #fff; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.06); padding: 28px 32px; margin-bottom: 28px; }
+  .guide-title { font-size: 20px; font-weight: 700; color: #1E293B; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .guide-text { font-size: 14px; color: #475569; line-height: 1.75; margin-bottom: 14px; }
+  .cmd-label { font-size: 12px; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .cmd-box { background: #1E293B; color: #7DD3FC; padding: 12px 16px; border-radius: 8px; font-family: monospace; font-size: 13px; white-space: pre; margin-bottom: 8px; }
+  .chat-wrap { background: #EFF6FF; border-radius: 12px; padding: 16px; margin: 8px 0 16px; }
+  .bubble-in { background: #fff; border: 1px solid #CBD5E1; color: #1E293B; border-radius: 12px 12px 12px 2px; padding: 10px 14px; font-size: 13px; font-family: monospace; white-space: pre-wrap; display: inline-block; max-width: 85%; margin-bottom: 6px; }
+  .bubble-out { background: #06C755; color: #fff; border-radius: 12px 12px 2px 12px; padding: 10px 14px; font-size: 13px; font-family: monospace; white-space: pre-wrap; display: inline-block; max-width: 85%; margin-bottom: 6px; }
+  .chat-row { display: flex; margin-bottom: 4px; }
+  .chat-row.right { justify-content: flex-end; }
+  .chat-row.left { justify-content: flex-start; }
+  .chat-clear { clear: both; }
+  .avatar { width: 32px; height: 32px; border-radius: 50%; background: #1E293B; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; margin-right: 8px; margin-top: 2px; }
+  .warn-box { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #991B1B; margin-top: 10px; }
+  .tip-box  { background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #065F46; margin-top: 10px; }
+  .section-divider { border: none; border-top: 2px dashed #E2E8F0; margin: 32px 0; }
+  .new-badge { background: #7C3AED; color: #fff; border-radius: 4px; padding: 1px 7px; font-size: 11px; font-weight: 700; vertical-align: middle; margin-left: 6px; }
+  .step-box { background: #F8FAFC; border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 0 8px 8px 0; margin-bottom: 10px; }
+  .meal-badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+  .meal-badge.breakfast { background: #BFDBFE; color: #1D4ED8; }
+  .meal-badge.lunch     { background: #FEF08A; color: #854D0E; }
+  .meal-badge.dinner    { background: #BBF7D0; color: #065F46; }
+  .meal-badge.drink     { background: #E9D5FF; color: #6B21A8; }
+  .meal-badge.snack     { background: #FED7AA; color: #9A3412; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="guide-container">
+
+  <div class="alert alert-success" style="text-align:center; font-size:15px; padding:20px; font-weight:600; margin-bottom:28px;">
+    🎉 歡迎！這份手冊是給 <strong>替代役男（Administrator）</strong> 的專屬操作說明
+  </div>
+
+  <!-- 1. 系統簡介 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🌟 這個系統在幹嘛？</h2>
+    <p class="guide-text">
+      這是一個 <strong>LINE 群組點餐 + 自動記帳</strong> 的機器人系統。<br>
+      你的日常任務就三件事：
+    </p>
+    <div style="display:grid; gap:10px;">
+      <div class="step-box"><strong>① 早中晚 收集訂單</strong><br><span style="font-size:13px;color:#475569;">問消防員要吃什麼，打一段 !點 指令到 LINE 群組</span></div>
+      <div class="step-box"><strong>② 打電話給店家</strong><br><span style="font-size:13px;color:#475569;">機器人會自動幫你整理好要說什麼，連電話都附上了</span></div>
+      <div class="step-box"><strong>③ 後台記帳、收錢</strong><br><span style="font-size:13px;color:#475569;">到網頁後台輸入金額、結清帳款，20:30 機器人自動催帳</span></div>
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- 2. 點餐指令 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🍱 核心指令：<code>!點</code>（必學！）</h2>
+    <p class="guide-text">格式：</p>
+    <div class="cmd-box">!點 [餐別(選填)] [店家名稱] [代墊人代號]
+[代號]. [品項]
+[代號]. [品項]</div>
+
+    <div class="cmd-label" style="margin-top:14px;">📌 基本點餐</div>
+    <div class="chat-wrap">
+      <div class="chat-row right"><div class="bubble-out">!點 麗媽 18
+21. 大腸臭臭鍋
+5. 海鮮香香鍋
+7. 大腸臭臭鍋 不要火鍋料</div></div>
+      <div class="chat-clear"></div>
+      <div class="chat-row left">
+        <div class="avatar">🤖</div>
+        <div class="bubble-in">✅ 已記錄 3 筆訂單
+【午餐 - 04/27】麗媽
+💳 代墊：18. 王大明
+────────────────────
+21. 阿明  大腸臭臭鍋  $0
+5.  小華  海鮮香香鍋  $0
+7.  阿勇  大腸臭臭鍋 (不要火鍋料)  $0
+────────────────────
+📞 打電話叫餐總表
+🍱 大腸臭臭鍋 × 2
+🍱 大腸臭臭鍋 (不要火鍋料) × 1
+🍱 海鮮香香鍋 × 1
+────────────────────
+共 3 份，總計待輸入
+📱 麗媽：0912-345-678</div>
+      </div>
+    </div>
+
+    <div class="cmd-label" style="margin-top:14px;">📌 指定餐別（提早訂飲料、預定晚餐時用）<span class="new-badge">NEW</span></div>
+    <div class="cmd-box">!點 飲料 五十嵐 18
+21. 珍珠奶茶
+5. 芒果冰沙</div>
+
+    <table style="width:100%; border-collapse:collapse; font-size:13px; margin:12px 0;">
+      <thead><tr style="background:#F8FAFC; border-bottom:1px solid var(--border);">
+        <th style="padding:8px 12px; text-align:left; color:#64748B;">輸入</th>
+        <th style="padding:8px 12px; text-align:left; color:#64748B;">等於</th>
+        <th style="padding:8px 12px; text-align:left; color:#64748B;">後台顏色</th>
+      </tr></thead>
+      <tbody>
+        {% for kw, mt, c, bg in [('早餐/早','早餐','#1D4ED8','#BFDBFE'),('午餐/午','午餐','#854D0E','#FEF08A'),('晚餐/晚','晚餐','#065F46','#BBF7D0'),('飲料/飲','飲料','#6B21A8','#E9D5FF'),('點心/下午茶','點心','#9A3412','#FED7AA')] %}
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px 12px;"><code style="background:#F1F5F9;padding:2px 6px;border-radius:4px;">{{ kw }}</code></td>
+          <td style="padding:8px 12px;">{{ mt }}</td>
+          <td style="padding:8px 12px;"><span class="meal-badge" style="background:{{ bg }};color:{{ c }};">{{ mt }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="tip-box">💡 不填餐別系統會自動依時間判斷；有需要提早訂再手動指定。</div>
+    <div class="warn-box" style="margin-top:10px;">⚠️ 代墊人代號是「今天先幫大家付錢」那個人的數字代號，不是名字！</div>
+  </div>
+
+  <!-- 3. 備註 -->
+  <div class="guide-card">
+    <h2 class="guide-title">✍️ 客製化備註（加辣、不要蔥…）</h2>
+    <p class="guide-text">這四種格式都可以寫備註，備註會單獨計算、不影響品項比對：</p>
+    <div class="cmd-box">21. 大腸臭臭鍋 不要火鍋料       ← 空格
+21. 大腸臭臭鍋(不要火鍋料)      ← 半形括號
+21. 大腸臭臭鍋（不要火鍋料）    ← 全形括號
+21. 大腸臭臭鍋-不要火鍋料       ← 減號</div>
+    <div class="tip-box">💡 打電話總表裡備註會獨立一行，老闆不會聽錯。</div>
+  </div>
+
+  <!-- 4. 店家今天沒開 -->
+  <div class="guide-card">
+    <h2 class="guide-title">⚠️ 店家今天沒開？</h2>
+    <p class="guide-text">如果你點的店家今天是公休日，機器人會在回覆加警告，但訂單還是會記錄進去：</p>
+    <div class="chat-wrap">
+      <div class="chat-row left">
+        <div class="avatar">🤖</div>
+        <div class="bubble-in">⚠️ 注意：麗媽 今天（週日）可能未營業
+訂單已記錄，請確認後再打電話</div>
+      </div>
+    </div>
+    <div class="tip-box">💡 店家有時候補班或換時間，所以只警告不擋單。確認一下再打電話就好。</div>
+  </div>
+
+  <!-- 5. 今天吃什麼 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🎲 選擇困難？<code>!今天吃什麼</code></h2>
+    <div class="chat-wrap">
+      <div class="chat-row right"><div class="bubble-out">!今天吃什麼</div></div>
+      <div class="chat-clear"></div>
+      <div class="chat-row left">
+        <div class="avatar">🤖</div>
+        <div class="bubble-in">🎲 今日隨機推薦（當日營業）
+
+1️⃣ 麗媽小吃
+   熱門：大腸臭臭鍋、海鮮香香鍋
+
+2️⃣ 西門肉羹
+   熱門：肉羹湯、意麵
+
+3️⃣ 便當伯
+   熱門：雞腿便當、排骨飯
+
+輸入 !點 [店家] 開始點餐！</div>
+      </div>
+    </div>
+    <div class="tip-box">💡 <code>!吃什麼</code>、<code>!隨機</code> 也可以觸發，只推當天有開的店。</div>
+  </div>
+
+  <!-- 6. 查帳單 -->
+  <div class="guide-card">
+    <h2 class="guide-title">💰 查帳單 <code>!bill</code></h2>
+    <div class="cmd-box">!bill 21     ← 查 21 號阿明的帳單</div>
+    <div class="chat-wrap">
+      <div class="chat-row right"><div class="bubble-out">!bill 21</div></div>
+      <div class="chat-clear"></div>
+      <div class="chat-row left">
+        <div class="avatar">🤖</div>
+        <div class="bubble-in">📋 21號 阿明 的帳單
+
+【今日消費 04/27】
+⏳ 午餐: $160（代墊: 18號）
+
+【總欠款】
+欠 18. 王大明：$480
+
+💡 使用 !結清 21 進行結帳</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7. 結清 -->
+  <div class="guide-card">
+    <h2 class="guide-title">✅ 結清帳款 <code>!結清</code></h2>
+    <div class="cmd-box">!結清 21         ← 結清 21 號所有欠款
+!結清 21 04/27  ← 結清 21 號當天的欠款</div>
+    <div class="chat-wrap">
+      <div class="chat-row right"><div class="bubble-out">!結清 21</div></div>
+      <div class="chat-clear"></div>
+      <div class="chat-row left">
+        <div class="avatar">🤖</div>
+        <div class="bubble-in">💰 結帳成功！
+👤 21. 阿明
+範圍：「所有歷史欠款」
+🧾 3 筆，共 $480
+✅ 已全部標記為已付款</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8. 今日總覽 -->
+  <div class="guide-card">
+    <h2 class="guide-title">📋 今日訂單總覽 <code>!today</code></h2>
+    <div class="cmd-box">!today   或   !今日</div>
+    <div class="tip-box">💡 快速看今天所有人點了什麼、哪些已付哪些未付。</div>
+  </div>
+
+  <!-- 9. 指令速查表 -->
+  <div class="guide-card">
+    <h2 class="guide-title">⚡ 指令速查表</h2>
+    <table style="width:100%; border-collapse: collapse; font-size: 13px;">
+      <thead>
+        <tr style="background: #F8FAFC; border-bottom: 2px solid var(--border);">
+          <th style="padding: 10px 12px; text-align: left; color: #64748B;">指令</th>
+          <th style="padding: 10px 12px; text-align: left; color: #64748B;">用途</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for cmd, desc in [
+          ('!點 [餐別] [店家] [代墊人]', '批次點餐（最重要！）'),
+          ('!今天吃什麼', '隨機推薦 3 家當日有開的店'),
+          ('!吃什麼 / !隨機', '同上'),
+          ('!菜單 [店家名稱]', '查詢並傳送菜單圖片'),
+          ('!bill [代號]', '查某人的帳單與欠款'),
+          ('!today / !今日', '今天所有訂單總覽'),
+          ('!結清 [代號]', '標記某人已還錢'),
+          ('!help', '顯示指令說明'),
+        ] %}
+        <tr style="border-bottom: 1px solid var(--border);">
+          <td style="padding: 10px 12px;"><code style="background:#F1F5F9; padding: 2px 6px; border-radius:4px;">{{ cmd }}</code></td>
+          <td style="padding: 10px 12px; color: #475569;">{{ desc }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="tip-box" style="margin-top: 14px;">
+      💡 所有指令的 <code>!</code> 換成全形 <code>！</code> 也可以正常觸發！
+    </div>
+  </div>
+
+  <!-- 10. 後台工作 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🖥️ 後台管理工作</h2>
+    <div style="display: grid; gap: 12px;">
+      <div class="step-box"><strong>🏪 新增店家 / 設定營業日</strong><br><span style="font-size:13px;color:#475569;">到「店家管理」新增店家，填電話 📞，點亮有開的營業日（週一到週日 7 個按鈕）</span></div>
+      <div class="step-box"><strong>🤖 上傳菜單（AI 自動辨識）</strong><br><span style="font-size:13px;color:#475569;">到「菜單管理」上傳菜單照片，AI 自動辨識品項和價格，確認後按「全部儲存」</span></div>
+      <div class="step-box"><strong>👥 新增人員</strong><br><span style="font-size:13px;color:#475569;">到「人員管理」新增消防員，系統自動生成帳號（user001）和初始密碼（4 位亂數），記得告知本人</span></div>
+      <div class="step-box"><strong>💰 記帳與結清</strong><br><span style="font-size:13px;color:#475569;">到「每日記帳」輸入金額、標記已付，或到「確認訂單」批次操作</span></div>
+    </div>
+  </div>
+
+  <!-- 11. 聯絡 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🆘 遇到問題？</h2>
+    <div style="background:#F8FAFC; border-left: 4px solid var(--accent); padding: 14px 18px; border-radius: 0 8px 8px 0;">
+      <strong>📩 聯絡開發者：</strong><br>
+      <a href="mailto:weijie.lin.268@gmail.com" style="color: var(--accent); font-weight: 600; text-decoration: none;">weijie.lin.268@gmail.com</a><br>
+      <span style="font-size: 13px; color: #64748B;">（來信請附上截圖，說明什麼操作導致錯誤）</span>
+    </div>
+    <p class="guide-text" style="margin-top: 16px; font-size: 14px; text-align: center; color: #94A3B8;">
+      祝你在這裡服役順順利利，打電話叫餐不要緊張 😄
+    </p>
+  </div>
+
+</div>
+{% endblock %}

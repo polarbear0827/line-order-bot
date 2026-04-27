@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block title %}消防員使用說明{% endblock %}
+{% block page_title %}🧑‍🚒 消防員個人入口說明{% endblock %}
+
+{% block head %}
+<style>
+  .guide-container { max-width: 760px; margin: 0 auto; }
+  .guide-card { background: #fff; border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 12px rgba(0,0,0,0.06); padding: 28px 32px; margin-bottom: 24px; }
+  .guide-title { font-size: 20px; font-weight: 700; color: #1E293B; margin-bottom: 12px; }
+  .guide-text { font-size: 14px; color: #475569; line-height: 1.75; margin-bottom: 12px; }
+  .warn-box { background: #FEF2F2; border: 1px solid #FECACA; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #991B1B; }
+  .tip-box  { background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #065F46; }
+  .section-divider { border: none; border-top: 2px dashed #E2E8F0; margin: 28px 0; }
+  .feature-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 16px 0; }
+  .feature-box { background: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px; padding: 18px; }
+  .feature-icon { font-size: 28px; margin-bottom: 8px; }
+  .feature-title { font-size: 14px; font-weight: 700; color: #065F46; margin-bottom: 4px; }
+  .feature-desc { font-size: 12px; color: #475569; line-height: 1.6; }
+
+  /* 仿手機畫面 */
+  .phone-mock { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 16px; padding: 16px; max-width: 360px; margin: 12px auto; }
+  .phone-header { background: #1E293B; color: #fff; border-radius: 10px 10px 0 0; padding: 10px 16px; font-size: 13px; font-weight: 700; margin: -16px -16px 14px; }
+  .stat-row { display: flex; gap: 10px; margin-bottom: 12px; }
+  .stat-mini { flex: 1; background: #fff; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px; text-align: center; }
+  .stat-mini .val { font-size: 18px; font-weight: 700; }
+  .stat-mini .lbl { font-size: 11px; color: #94A3B8; }
+  .order-row { background: #fff; border: 1px solid #E2E8F0; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+  .order-item { font-size: 13px; font-weight: 600; color: #1E293B; }
+  .order-sub  { font-size: 11px; color: #94A3B8; margin-top: 2px; }
+  .badge-unpaid { background: #FEF3C7; color: #92400E; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+  .badge-paid   { background: #D1FAE5; color: #065F46; border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+
+  /* 登入 mock */
+  .login-mock { background: #1E293B; border-radius: 16px; padding: 28px; max-width: 340px; margin: 12px auto; }
+  .login-role-btns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 20px; }
+  .role-btn { border: 2px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 4px; text-align: center; cursor: pointer; font-size: 12px; color: #94A3B8; }
+  .role-btn.active { border-color: #06C755; color: #fff; background: rgba(6,199,85,0.15); }
+  .mock-input { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 13px; width: 100%; box-sizing: border-box; margin-bottom: 10px; }
+  .mock-btn { background: #06C755; color: #fff; border: none; border-radius: 8px; padding: 12px; width: 100%; font-size: 14px; font-weight: 700; cursor: pointer; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="guide-container">
+
+  <div style="background: linear-gradient(135deg, #065F46, #059669); color: #fff; border-radius: 16px; padding: 28px 32px; margin-bottom: 28px; text-align: center;">
+    <div style="font-size: 40px; margin-bottom: 12px;">🧑‍🚒</div>
+    <div style="font-size: 20px; font-weight: 700; margin-bottom: 8px;">消防員個人入口</div>
+    <div style="font-size: 13px; color: #A7F3D0;">查帳單、看點餐紀錄，簡單好用</div>
+  </div>
+
+  <!-- 1. 登入說明 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🔐 如何登入？</h2>
+    <p class="guide-text">打開後台網址，選擇「User」角色，輸入你的帳號和密碼即可登入。</p>
+
+    <div class="login-mock">
+      <div style="color:#fff; font-size:15px; font-weight:700; text-align:center; margin-bottom:16px;">🍱 點餐系統</div>
+      <div class="login-role-btns">
+        <div class="role-btn">👑<br>Provider</div>
+        <div class="role-btn">🧑‍💼<br>Admin</div>
+        <div class="role-btn active">🧑‍🚒<br>User</div>
+      </div>
+      <input class="mock-input" type="text" value="user021" readonly>
+      <input class="mock-input" type="password" value="****" readonly>
+      <button class="mock-btn">登 入</button>
+    </div>
+
+    <div style="margin-top: 16px; background: #F8FAFC; border-radius: 10px; padding: 16px; font-size: 13px;">
+      <strong>帳號格式：</strong><code>user</code> + 你的三位數代號<br>
+      <span style="color:#475569;">例如：代號 1 → <code>user001</code>，代號 21 → <code>user021</code></span><br><br>
+      <strong>初始密碼：</strong>管理員給你的 <strong>4 位數字</strong>（不知道的話問替代役男）
+    </div>
+
+    <div class="tip-box" style="margin-top: 12px;">
+      💡 第一次登入後建議立即去「個人設定」改成自己記得的密碼（4–8 位，數字或英數皆可）
+    </div>
+  </div>
+
+  <hr class="section-divider">
+
+  <!-- 2. 功能介紹 -->
+  <div class="guide-card">
+    <h2 class="guide-title">📱 登入後可以做什麼？</h2>
+    <div class="feature-grid">
+      <div class="feature-box">
+        <div class="feature-icon">🍱</div>
+        <div class="feature-title">今日點餐</div>
+        <div class="feature-desc">今天點了什麼餐、哪家店、金額，一目了然</div>
+      </div>
+      <div class="feature-box">
+        <div class="feature-icon">💸</div>
+        <div class="feature-title">目前欠款</div>
+        <div class="feature-desc">目前還有多少錢沒付、欠誰的，清楚列出</div>
+      </div>
+      <div class="feature-box">
+        <div class="feature-icon">📅</div>
+        <div class="feature-title">歷史消費</div>
+        <div class="feature-desc">選日期範圍，查這段時間吃了多少錢、每餐點了什麼</div>
+      </div>
+      <div class="feature-box">
+        <div class="feature-icon">🔐</div>
+        <div class="feature-title">改密碼</div>
+        <div class="feature-desc">設定自己好記的密碼（4–8 位，數字或英數混合）</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 今日帳單畫面 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🍱 今日點餐 — 範例畫面</h2>
+    <p class="guide-text">登入後主頁會直接顯示你今天的點餐狀況：</p>
+
+    <div class="phone-mock">
+      <div class="phone-header">🧑‍🚒 歡迎，阿明（代號 21）</div>
+      <div class="stat-row">
+        <div class="stat-mini">
+          <div class="val" style="color:#1D4ED8;">3</div>
+          <div class="lbl">今日餐點</div>
+        </div>
+        <div class="stat-mini">
+          <div class="val" style="color:#DC2626;">$480</div>
+          <div class="lbl">未付金額</div>
+        </div>
+        <div class="stat-mini">
+          <div class="val" style="color:#059669;">$0</div>
+          <div class="lbl">已付金額</div>
+        </div>
+      </div>
+
+      <div style="font-size:12px; font-weight:700; color:#64748B; margin-bottom:8px;">📅 2026/04/27 今日明細</div>
+
+      <div class="order-row">
+        <div>
+          <div class="order-item">大腸臭臭鍋</div>
+          <div class="order-sub">☀️ 午餐・麗媽・代墊：18. 王大明</div>
+        </div>
+        <div>
+          <div style="font-weight:700; font-size:13px;">$160</div>
+          <div style="text-align:right; margin-top:4px;"><span class="badge-unpaid">未付</span></div>
+        </div>
+      </div>
+
+      <div class="order-row">
+        <div>
+          <div class="order-item">珍珠奶茶</div>
+          <div class="order-sub">🧋 飲料・五十嵐・代墊：18. 王大明</div>
+        </div>
+        <div>
+          <div style="font-weight:700; font-size:13px;">$65</div>
+          <div style="text-align:right; margin-top:4px;"><span class="badge-unpaid">未付</span></div>
+        </div>
+      </div>
+
+      <div class="order-row">
+        <div>
+          <div class="order-item">雞腿便當</div>
+          <div class="order-sub">🌅 早餐・便當伯・代墊：18. 王大明</div>
+        </div>
+        <div>
+          <div style="font-weight:700; font-size:13px;">$90</div>
+          <div style="text-align:right; margin-top:4px;"><span class="badge-paid">已付</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 歷史消費 -->
+  <div class="guide-card">
+    <h2 class="guide-title">📅 歷史消費 — 選日期範圍</h2>
+    <p class="guide-text">可以選開始日期和結束日期，查看這段期間的完整消費紀錄與總金額：</p>
+
+    <div class="phone-mock">
+      <div class="phone-header">📅 歷史消費查詢</div>
+      <div style="display:flex; gap:8px; margin-bottom:12px; font-size:13px;">
+        <div style="flex:1; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:8px; text-align:center;">
+          <div style="font-size:10px; color:#94A3B8;">開始日期</div>
+          <div style="font-weight:700;">04/01</div>
+        </div>
+        <div style="flex:1; background:#F8FAFC; border:1px solid #E2E8F0; border-radius:8px; padding:8px; text-align:center;">
+          <div style="font-size:10px; color:#94A3B8;">結束日期</div>
+          <div style="font-weight:700;">04/27</div>
+        </div>
+        <div style="background:#1D4ED8; color:#fff; border-radius:8px; padding:8px 14px; font-size:12px; font-weight:700; display:flex; align-items:center;">查詢</div>
+      </div>
+
+      <div style="background:#F0FDF4; border:1px solid #BBF7D0; border-radius:10px; padding:14px; margin-bottom:12px; text-align:center;">
+        <div style="font-size:11px; color:#065F46; margin-bottom:4px;">本期總消費</div>
+        <div style="font-size:24px; font-weight:700; color:#059669;">$3,840</div>
+        <div style="font-size:11px; color:#94A3B8;">共 27 筆 · 已付 $3,200 · 未付 $640</div>
+      </div>
+
+      <div class="order-row">
+        <div>
+          <div class="order-item">大腸臭臭鍋</div>
+          <div class="order-sub">04/27 午餐・麗媽</div>
+        </div>
+        <div style="font-size:13px; font-weight:700; color:#DC2626;">$160</div>
+      </div>
+      <div class="order-row">
+        <div>
+          <div class="order-item">排骨飯</div>
+          <div class="order-sub">04/26 午餐・便當伯</div>
+        </div>
+        <div style="font-size:13px; font-weight:700; color:#059669;">$100</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. 改密碼 -->
+  <div class="guide-card">
+    <h2 class="guide-title">🔐 改密碼</h2>
+    <p class="guide-text">到右上角「個人設定」→「改密碼」，輸入舊密碼和新密碼即可：</p>
+    <div style="background:#F8FAFC; border-radius:12px; padding:20px; max-width:320px; margin:0 auto;">
+      <div style="font-size:14px; font-weight:700; margin-bottom:14px; text-align:center;">🔐 修改密碼</div>
+      <div style="font-size:12px; color:#64748B; margin-bottom:4px;">目前密碼</div>
+      <div style="background:#fff; border:1px solid #E2E8F0; border-radius:8px; padding:10px 14px; margin-bottom:10px; font-size:13px; color:#94A3B8;">••••</div>
+      <div style="font-size:12px; color:#64748B; margin-bottom:4px;">新密碼（4–8 位）</div>
+      <div style="background:#fff; border:1px solid #E2E8F0; border-radius:8px; padding:10px 14px; margin-bottom:10px; font-size:13px; color:#94A3B8;">輸入新密碼</div>
+      <div style="background:#1D4ED8; color:#fff; border-radius:8px; padding:10px; text-align:center; font-size:13px; font-weight:700;">確認修改</div>
+    </div>
+    <div class="tip-box" style="margin-top:14px;">💡 密碼 4–8 位，純數字或英數混合都可以，設一個自己好記的就行。</div>
+  </div>
+
+  <!-- 6. 注意事項 -->
+  <div class="guide-card">
+    <h2 class="guide-title">⚠️ 注意事項</h2>
+    <div class="warn-box">
+      <ul style="margin: 0; padding-left: 18px; line-height: 2;">
+        <li>User 帳號只能看到<strong>自己的</strong>訂單和帳單，無法看到其他人的資料</li>
+        <li>金額由替代役男輸入，如有問題請告知</li>
+        <li>忘記密碼請找替代役男（Admin）重設，或聯絡系統管理者</li>
+        <li>帳號格式固定為 <code>user</code> + 三位數代號，不可自行修改</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
