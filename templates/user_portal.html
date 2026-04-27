@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}個人入口{% endblock %}
+{% block page_title %}🧑‍🚒 {{ user.name }} 的個人入口{% endblock %}
+
+{% block head %}
+<style>
+  .portal-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin-bottom: 24px; }
+  .stat-card { background: #fff; border-radius: 14px; border: 1px solid var(--border); padding: 20px 24px; display: flex; align-items: center; gap: 16px; }
+  .stat-icon { font-size: 32px; }
+  .stat-val  { font-size: 24px; font-weight: 700; }
+  .stat-lbl  { font-size: 12px; color: #94A3B8; }
+  .order-card { background: #fff; border-radius: 14px; border: 1px solid var(--border); padding: 20px 24px; margin-bottom: 20px; }
+  .order-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .order-row:last-child { border-bottom: none; }
+  .badge-meal { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+  .badge-paid   { background: #D1FAE5; color: #065F46; }
+  .badge-unpaid { background: #FEF3C7; color: #92400E; }
+  .date-range { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .date-range input { padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; }
+  #history-result { margin-top: 16px; }
+  .history-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .history-row:last-child { border-bottom: none; }
+  .section-title { font-size: 16px; font-weight: 700; color: #1E293B; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .meal-colors { breakfast: '#BFDBFE'; lunch: '#FEF08A'; dinner: '#BBF7D0'; drink: '#E9D5FF'; snack: '#FED7AA'; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- 統計卡片 -->
+<div class="portal-grid">
+  <div class="stat-card">
+    <div class="stat-icon">🍱</div>
+    <div>
+      <div class="stat-val">{{ today_orders | length }}</div>
+      <div class="stat-lbl">今日餐點</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">💸</div>
+    <div>
+      <div class="stat-val" style="color: #DC2626;">${{ unpaid_total | int }}</div>
+      <div class="stat-lbl">未付金額</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon">📋</div>
+    <div>
+      <div class="stat-val">{{ unpaid | length }}</div>
+      <div class="stat-lbl">待付款筆數</div>
+    </div>
+  </div>
+</div>
+
+<!-- 今日點餐 -->
+<div class="order-card">
+  <div class="section-title">🍱 今日點餐
+    <span style="font-size:13px; font-weight:400; color:#94A3B8;">{{ today.strftime('%Y/%m/%d') }}</span>
+  </div>
+  {% if today_orders %}
+    {% for o in today_orders %}
+    {% set meal_colors = {
+      'breakfast': ('#BFDBFE','#1D4ED8','早餐'),
+      'lunch':     ('#FEF08A','#854D0E','午餐'),
+      'dinner':    ('#BBF7D0','#065F46','晚餐'),
+      'drink':     ('#E9D5FF','#6B21A8','飲料'),
+      'snack':     ('#FED7AA','#9A3412','點心'),
+    } %}
+    {% set color = meal_colors.get(o.daily_menu.meal_type, ('#F1F5F9','#475569','其他')) %}
+    <div class="order-row">
+      <div>
+        <div style="font-weight:600; font-size:14px; margin-bottom:4px;">{{ o.items }}</div>
+        <div style="font-size:12px; color:#64748B;">
+          <span class="badge-meal" style="background:{{ color[0] }}; color:{{ color[1] }};">{{ color[2] }}</span>
+          {% if o.daily_menu.shop %} · {{ o.daily_menu.shop.name }}{% endif %}
+          {% if o.payer %} · 代墊: {{ o.payer.name }}{% endif %}
+        </div>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-weight:700; font-size:15px;">${{ o.amount | int }}</div>
+        <div style="margin-top:4px;">
+          {% if o.paid %}<span class="badge-paid">已付</span>{% else %}<span class="badge-unpaid">未付</span>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p style="color:#94A3B8; font-size:14px; text-align:center; padding:20px 0;">今天還沒有點餐紀錄</p>
+  {% endif %}
+</div>
+
+<!-- 欠款明細 -->
+{% if unpaid %}
+<div class="order-card">
+  <div class="section-title">💸 未付款明細</div>
+  {% for o in unpaid %}
+  <div class="order-row">
+    <div>
+      <div style="font-size:13px; font-weight:600;">{{ o.items }}</div>
+      <div style="font-size:12px; color:#64748B;">{{ o.daily_menu.menu_date.strftime('%m/%d') }}
+        {% if o.payer %} · 欠 {{ o.payer.name }}{% endif %}
+      </div>
+    </div>
+    <div style="font-weight:700; color:#DC2626;">${{ o.amount | int }}</div>
+  </div>
+  {% endfor %}
+  <div style="text-align:right; font-size:14px; font-weight:700; color:#DC2626; margin-top:12px; padding-top:12px; border-top:1px solid var(--border);">
+    合計：${{ unpaid_total | int }}
+  </div>
+</div>
+{% endif %}
+
+<!-- 歷史消費 -->
+<div class="order-card">
+  <div class="section-title">📅 歷史消費查詢</div>
+  <div class="date-range">
+    <input type="date" id="start-date" value="{{ today.replace(day=1).strftime('%Y-%m-%d') }}">
+    <span style="color:#94A3B8;">至</span>
+    <input type="date" id="end-date" value="{{ today.strftime('%Y-%m-%d') }}">
+    <button class="btn btn-primary" onclick="loadHistory()" style="padding:8px 20px;">查詢</button>
+  </div>
+
+  <div id="history-result"></div>
+</div>
+
+<!-- 改密碼連結 -->
+<div style="text-align:center; margin-top:8px;">
+  <a href="{{ url_for('change_password') }}" style="color:#64748B; font-size:13px; text-decoration:none;">
+    🔐 修改密碼
+  </a>
+</div>
+
+<script>
+const MEAL_LABELS = { breakfast:'早餐', lunch:'午餐', dinner:'晚餐', drink:'飲料', snack:'點心' };
+const MEAL_COLORS = {
+  breakfast: ['#BFDBFE','#1D4ED8'], lunch: ['#FEF08A','#854D0E'],
+  dinner: ['#BBF7D0','#065F46'],    drink: ['#E9D5FF','#6B21A8'],
+  snack:  ['#FED7AA','#9A3412']
+};
+
+async function loadHistory() {
+  const start = document.getElementById('start-date').value;
+  const end   = document.getElementById('end-date').value;
+  const res = await fetch(`/user-portal/history?start=${start}&end=${end}`);
+  const data = await res.json();
+  const el = document.getElementById('history-result');
+
+  if (!data.orders.length) {
+    el.innerHTML = '<p style="color:#94A3B8;text-align:center;padding:20px 0;">此區間無消費紀錄</p>';
+    return;
+  }
+
+  let html = `
+    <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:14px 18px;margin:14px 0;text-align:center;">
+      <div style="font-size:11px;color:#065F46;margin-bottom:4px;">${data.start} ~ ${data.end} 總消費</div>
+      <div style="font-size:26px;font-weight:700;color:#059669;">$${Math.round(data.total)}</div>
+      <div style="font-size:11px;color:#94A3B8;">已付 $${Math.round(data.paid)} · 未付 $${Math.round(data.unpaid)}</div>
+    </div>`;
+
+  data.orders.forEach(o => {
+    const [bg, fg] = MEAL_COLORS[o.meal_type] || ['#F1F5F9','#475569'];
+    const label = MEAL_LABELS[o.meal_type] || o.meal_type;
+    const paidBadge = o.paid
+      ? '<span style="background:#D1FAE5;color:#065F46;border-radius:20px;padding:1px 8px;font-size:11px;">已付</span>'
+      : '<span style="background:#FEF3C7;color:#92400E;border-radius:20px;padding:1px 8px;font-size:11px;">未付</span>';
+    html += `<div class="history-row">
+      <div>
+        <span style="display:inline-block;background:${bg};color:${fg};border-radius:20px;padding:1px 8px;font-size:11px;font-weight:700;margin-right:6px;">${label}</span>
+        ${o.date} &nbsp; ${o.items} <span style="color:#94A3B8;font-size:12px;">${o.shop}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-weight:700;">$${Math.round(o.amount)}</span>${paidBadge}
+      </div>
+    </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+// 頁面載入自動查本月
+loadHistory();
+</script>
+{% endblock %}

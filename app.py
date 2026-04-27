@@ -8,7 +8,7 @@ from apscheduler.triggers.cron import CronTrigger
 import pytz
 
 from config import Config
-from models import db, User, Shop, MenuItem, DailyMenu, Order, LineMessage, SystemSetting, IpBan
+from models import db, User, Shop, MenuItem, DailyMenu, Order, LineMessage, SystemSetting, IpBan, LoginLog
 
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
@@ -47,21 +47,95 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 with app.app_context():
     db.create_all()
-    # ── SQLite 欄位 Migration（安全加欄，已存在就跳過）──
+    # ── SQLite 欄位 Migration ───────────────────────────
     with db.engine.connect() as conn:
-        for col, ddl in [
-            ('phone',         'ALTER TABLE shops ADD COLUMN phone VARCHAR(30)'),
-            ('business_days', 'ALTER TABLE shops ADD COLUMN business_days VARCHAR(7) DEFAULT "1111111"'),
-            ('note',          'ALTER TABLE orders ADD COLUMN note VARCHAR(200)'),
+        for ddl in [
+            'ALTER TABLE shops ADD COLUMN phone VARCHAR(30)',
+            'ALTER TABLE shops ADD COLUMN business_days VARCHAR(7) DEFAULT "1111111"',
+            'ALTER TABLE orders ADD COLUMN note VARCHAR(200)',
+            'ALTER TABLE users ADD COLUMN role VARCHAR(20) DEFAULT "user"',
+            'ALTER TABLE users ADD COLUMN username VARCHAR(50)',
+            'ALTER TABLE users ADD COLUMN password_enc TEXT',
+            'ALTER TABLE users ADD COLUMN must_change_pw BOOLEAN DEFAULT 1',
         ]:
             try:
                 conn.execute(db.text(ddl))
                 conn.commit()
             except Exception:
-                pass  # 欄位已存在，忽略
-    if not User.query.filter_by(is_admin=True).first():
-        db.session.add(User(user_code='admin', name='管理員', is_admin=True))
+                pass
+        # 修正舊 admin 角色
+        try:
+            conn.execute(db.text("UPDATE users SET role='admin' WHERE is_admin=1 AND (role IS NULL OR role='user')"))
+            conn.commit()
+        except Exception:
+            pass
+
+    # ── 資料 Migration：補帳號 / 密碼 / Provider 帳號 ──
+    def _local_encrypt(pw: str) -> str:
+        import base64 as _b64, hashlib as _hs
+        from cryptography.fernet import Fernet as _F
+        raw = os.environ.get('AES_KEY', 'fallback-key-please-set-in-env')
+        key = _b64.urlsafe_b64encode(_hs.sha256(raw.encode()).digest())
+        return _F(key).encrypt(pw.encode()).decode()
+
+    import random as _rand
+    admin_counter = 1
+    for u in User.query.filter_by(role='admin').all():
+        if not u.username:
+            u.username = f'admin{admin_counter:03d}'
+        admin_counter += 1
+        if not u.password_enc:
+            pw = ''.join([str(_rand.randint(0, 9)) for _ in range(4)])
+            u.password_enc = _local_encrypt(pw)
+            u.must_change_pw = True
+    for u in User.query.filter(User.role == 'user', User.user_code != 'admin').all():
+        if not u.username:
+            try:
+                u.username = f'user{int(u.user_code):03d}'
+            except ValueError:
+                u.username = f'user_{u.user_code}'
+        if not u.password_enc:
+            pw = ''.join([str(_rand.randint(0, 9)) for _ in range(4)])
+            u.password_enc = _local_encrypt(pw)
+            u.must_change_pw = True
+    db.session.commit()
+
+    # 建立 / 更新 Provider 帳號
+    prov_username = os.environ.get('PROVIDER_USERNAME', 'polarbear268')
+    prov_password = os.environ.get('PROVIDER_PASSWORD', '')
+    if prov_password:
+        provider = User.query.filter_by(username=prov_username).first()
+        if not provider:
+            provider = User(
+                user_code='provider', name='系統管理者',
+                role='provider', is_admin=True,
+                username=prov_username, must_change_pw=False,
+            )
+            db.session.add(provider)
+        provider.password_enc = _local_encrypt(prov_password)
+        provider.must_change_pw = False
         db.session.commit()
+
+# ── AES 加解密 ──────────────────────────────────────────
+import base64, hashlib, random, string
+from cryptography.fernet import Fernet
+
+def _get_fernet():
+    raw = os.environ.get('AES_KEY', 'fallback-key-please-set-in-env')
+    key = base64.urlsafe_b64encode(hashlib.sha256(raw.encode()).digest())
+    return Fernet(key)
+
+def encrypt_password(plaintext: str) -> str:
+    return _get_fernet().encrypt(plaintext.encode()).decode()
+
+def decrypt_password(ciphertext: str) -> str:
+    try:
+        return _get_fernet().decrypt(ciphertext.encode()).decode()
+    except Exception:
+        return '（解密失敗）'
+
+def generate_password(length=4) -> str:
+    return ''.join(random.choices(string.digits, k=length))
 
 # ── 輔助 ────────────────────────────────────────────────
 def get_current_user():
@@ -69,16 +143,23 @@ def get_current_user():
         return db.session.get(User, session['user_id'])
     return None
 
-def login_required(admin_only=False):
+def login_required(roles=None, admin_only=False):
+    """
+    roles: list of allowed roles, e.g. ['provider','admin']
+           None = any authenticated user
+    admin_only: legacy compat — treats as roles=['provider','admin']
+    """
     def decorator(f):
         def wrapper(*args, **kwargs):
             user = get_current_user()
             if not user:
                 flash('請先登入', 'error')
                 return redirect(url_for('login'))
-            if admin_only and not user.is_admin:
-                flash('需要管理員權限', 'error')
-                return redirect(url_for('dashboard'))
+            allowed = roles or (['provider', 'admin'] if admin_only else None)
+            if allowed and (user.role or 'user') not in allowed:
+                flash('權限不足', 'error')
+                dest = url_for('user_portal') if user.role == 'user' else url_for('dashboard')
+                return redirect(dest)
             return f(*args, **kwargs)
         wrapper.__name__ = f.__name__
         return wrapper
@@ -145,47 +226,97 @@ def _record_success(ip):
         db.session.commit()
 
 # ── 認證 ────────────────────────────────────────────────
+def _login_redirect(user):
+    """依角色跳轉到對應首頁"""
+    if user.role == 'user':
+        return redirect(url_for('user_portal'))
+    return redirect(url_for('dashboard'))
+
 @app.route('/')
 def index():
-    return redirect(url_for('dashboard') if get_current_user() else url_for('login'))
+    u = get_current_user()
+    if u:
+        return _login_redirect(u)
+    return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     ip = _get_client_ip()
     if request.method == 'POST':
-        # 先檢查 IP 是否被封鎖
         is_banned, banned_until = _check_ip_banned(ip)
         if is_banned:
-            tw_tz = __import__('pytz').timezone('Asia/Taipei')
-            until_tw = banned_until.replace(tzinfo=__import__('pytz').utc).astimezone(tw_tz)
+            tw_tz = pytz.timezone('Asia/Taipei')
+            until_tw = banned_until.replace(tzinfo=pytz.utc).astimezone(tw_tz)
             flash(f'此 IP 已被封鎖，解鎖時間：{until_tw.strftime("%Y/%m/%d %H:%M")}', 'error')
             return render_template('login.html')
 
-        key = request.form.get('access_key', '').strip()
-        if key == app.config['ADMIN_ACCESS_KEY']:
-            admin = User.query.filter_by(is_admin=True).first()
-            session['user_id'] = admin.id
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '').strip()
+
+        user = User.query.filter_by(username=username).first()
+        login_ok = False
+        if user and user.password_enc:
+            try:
+                login_ok = (decrypt_password(user.password_enc) == password)
+            except Exception:
+                login_ok = False
+
+        if login_ok:
+            session['user_id'] = user.id
             session.permanent = True
             _record_success(ip)
-            return redirect(url_for('dashboard'))
+            db.session.add(LoginLog(username=username, role=user.role, ip=ip, success=True))
+            db.session.commit()
+            if user.must_change_pw:
+                flash('請先修改初始密碼', 'warning')
+                return redirect(url_for('change_password'))
+            return _login_redirect(user)
 
-        # 密碼錯誤
+        # 失敗
         record = _record_fail(ip)
-        remaining = 5 - record.fail_count if record.fail_count < 5 else 0
+        db.session.add(LoginLog(username=username, role=None, ip=ip, success=False))
+        db.session.commit()
         if record.banned_until and record.banned_until > datetime.utcnow():
-            tw_tz = __import__('pytz').timezone('Asia/Taipei')
-            until_tw = record.banned_until.replace(tzinfo=__import__('pytz').utc).astimezone(tw_tz)
-            flash(f'金鑰錯誤次數過多，IP 已封鎖至 {until_tw.strftime("%Y/%m/%d %H:%M")}', 'error')
+            tw_tz = pytz.timezone('Asia/Taipei')
+            until_tw = record.banned_until.replace(tzinfo=pytz.utc).astimezone(tw_tz)
+            flash(f'錯誤次數過多，IP 已封鎖至 {until_tw.strftime("%Y/%m/%d %H:%M")}', 'error')
         elif record.fail_count < 5:
-            flash(f'金鑰錯誤（還有 {5 - record.fail_count} 次機會）', 'error')
+            flash(f'帳號或密碼錯誤（還有 {5 - record.fail_count} 次機會）', 'error')
         else:
-            flash(f'金鑰錯誤（累計 {record.fail_count} 次失敗）', 'error')
+            flash(f'帳號或密碼錯誤（累計 {record.fail_count} 次失敗）', 'error')
     return render_template('login.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
+
+@app.route('/change-password', methods=['GET', 'POST'])
+@login_required(roles=['provider', 'admin', 'user'])
+def change_password():
+    user = get_current_user()
+    if request.method == 'POST':
+        old_pw = request.form.get('old_password', '').strip()
+        new_pw = request.form.get('new_password', '').strip()
+        confirm = request.form.get('confirm_password', '').strip()
+        # 驗證舊密碼
+        current = decrypt_password(user.password_enc) if user.password_enc else ''
+        if current != old_pw:
+            flash('目前密碼錯誤', 'error')
+            return render_template('change_password.html', user=user)
+        # 驗證新密碼規則：4-8 位，數字或英數
+        if not (4 <= len(new_pw) <= 8) or not new_pw.isalnum():
+            flash('新密碼需為 4–8 位英文或數字', 'error')
+            return render_template('change_password.html', user=user)
+        if new_pw != confirm:
+            flash('兩次密碼不一致', 'error')
+            return render_template('change_password.html', user=user)
+        user.password_enc = encrypt_password(new_pw)
+        user.must_change_pw = False
+        db.session.commit()
+        flash('密碼修改成功！', 'success')
+        return _login_redirect(user)
+    return render_template('change_password.html', user=user)
 
 @app.route('/health')
 def health():
@@ -294,24 +425,149 @@ def manage_shops():
                            categories=app.config['SHOP_CATEGORIES'])
 
 @app.route('/guide')
-@login_required(admin_only=True)
+@login_required(roles=['provider', 'admin'])
 def guide():
     return render_template('guide.html', user=get_current_user())
 
 @app.route('/guide/admin')
-@login_required(admin_only=True)
+@login_required(roles=['provider', 'admin'])
 def guide_admin():
     return render_template('guide_admin.html', user=get_current_user())
 
 @app.route('/guide/user')
-@login_required(admin_only=True)
+@login_required(roles=['provider', 'admin', 'user'])
 def guide_user():
     return render_template('guide_user.html', user=get_current_user())
 
 @app.route('/guide/provider')
-@login_required(admin_only=True)
+@login_required(roles=['provider'])
 def guide_provider():
     return render_template('guide_provider.html', user=get_current_user())
+
+# ── User 個人入口 ────────────────────────────────────────
+@app.route('/user-portal')
+@login_required(roles=['provider', 'admin', 'user'])
+def user_portal():
+    user = get_current_user()
+    today = date.today()
+    today_orders = Order.query.join(DailyMenu).filter(
+        DailyMenu.menu_date == today,
+        Order.user_id == user.id
+    ).all()
+    # 未付款
+    unpaid = [o for o in Order.query.filter_by(user_id=user.id, paid=False).all()]
+    unpaid_total = sum(o.amount for o in unpaid)
+    return render_template('user_portal.html', user=user,
+                           today_orders=today_orders,
+                           unpaid=unpaid, unpaid_total=unpaid_total,
+                           today=today)
+
+@app.route('/user-portal/history')
+@login_required(roles=['provider', 'admin', 'user'])
+def user_portal_history():
+    user = get_current_user()
+    start_str = request.args.get('start', '')
+    end_str   = request.args.get('end', '')
+    try:
+        start_date = datetime.strptime(start_str, '%Y-%m-%d').date() if start_str else date(date.today().year, 1, 1)
+        end_date   = datetime.strptime(end_str,   '%Y-%m-%d').date() if end_str   else date.today()
+    except ValueError:
+        start_date, end_date = date(date.today().year, 1, 1), date.today()
+    orders = Order.query.join(DailyMenu).filter(
+        Order.user_id == user.id,
+        DailyMenu.menu_date >= start_date,
+        DailyMenu.menu_date <= end_date,
+    ).order_by(DailyMenu.menu_date.desc()).all()
+    total = sum(o.amount for o in orders)
+    paid  = sum(o.amount for o in orders if o.paid)
+    return jsonify({
+        'orders': [{
+            'date': o.daily_menu.menu_date.strftime('%Y/%m/%d'),
+            'meal_type': o.daily_menu.meal_type,
+            'items': o.items,
+            'amount': o.amount,
+            'paid': o.paid,
+            'shop': o.daily_menu.shop.name if o.daily_menu.shop_id else '未記錄',
+        } for o in orders],
+        'total': total, 'paid': paid, 'unpaid': total - paid,
+        'start': start_date.strftime('%Y/%m/%d'),
+        'end':   end_date.strftime('%Y/%m/%d'),
+    })
+
+# ── Provider 後台 ────────────────────────────────────────
+@app.route('/provider/panel')
+@login_required(roles=['provider'])
+def provider_panel():
+    import pytz as _tz
+    tw = _tz.timezone('Asia/Taipei')
+    bans = IpBan.query.order_by(IpBan.updated_at.desc()).all()
+    now_utc = datetime.utcnow()
+    ban_list = []
+    for b in bans:
+        banned = b.banned_until and b.banned_until > now_utc
+        until_tw = b.banned_until.replace(tzinfo=_tz.utc).astimezone(tw).strftime('%Y/%m/%d %H:%M') if b.banned_until else None
+        ban_list.append({'id': b.id, 'ip': b.ip, 'fail_count': b.fail_count,
+                         'banned': banned, 'until': until_tw})
+    logs = LoginLog.query.order_by(LoginLog.created_at.desc()).limit(200).all()
+    admins = User.query.filter_by(role='admin').order_by(User.username).all()
+    users  = User.query.filter_by(role='user').order_by(User.username).all()
+    return render_template('provider_panel.html', user=get_current_user(),
+                           ban_list=ban_list, logs=logs, admins=admins, users=users,
+                           decrypt_password=decrypt_password)
+
+@app.route('/provider/unban/<int:ban_id>', methods=['POST'])
+@login_required(roles=['provider'])
+def provider_unban(ban_id):
+    ban = db.get_or_404(IpBan, ban_id)
+    ban.banned_until = None
+    ban.fail_count = 0
+    db.session.commit()
+    flash(f'✅ 已解鎖 {ban.ip}', 'success')
+    return redirect(url_for('provider_panel'))
+
+@app.route('/provider/add-admin', methods=['POST'])
+@login_required(roles=['provider'])
+def provider_add_admin():
+    name = request.form.get('name', '').strip()
+    if not name:
+        flash('請輸入姓名', 'error')
+        return redirect(url_for('provider_panel'))
+    # 計算下一個 admin 編號
+    count = User.query.filter_by(role='admin').count() + 1
+    username = f'admin{count:03d}'
+    while User.query.filter_by(username=username).first():
+        count += 1
+        username = f'admin{count:03d}'
+    pw = generate_password(4)
+    u = User(user_code=f'adm{count}', name=name, role='admin', is_admin=True,
+             username=username, password_enc=encrypt_password(pw), must_change_pw=True)
+    db.session.add(u)
+    db.session.commit()
+    flash(f'✅ 已新增 Admin：{username}，初始密碼：{pw}', 'success')
+    return redirect(url_for('provider_panel'))
+
+@app.route('/provider/reset-password/<int:uid>', methods=['POST'])
+@login_required(roles=['provider'])
+def provider_reset_password(uid):
+    u = db.get_or_404(User, uid)
+    pw = generate_password(4)
+    u.password_enc = encrypt_password(pw)
+    u.must_change_pw = True
+    db.session.commit()
+    flash(f'✅ {u.username} 密碼已重設為：{pw}', 'success')
+    return redirect(url_for('provider_panel'))
+
+@app.route('/provider/delete-admin/<int:uid>', methods=['POST'])
+@login_required(roles=['provider'])
+def provider_delete_admin(uid):
+    u = db.get_or_404(User, uid)
+    if u.role != 'admin':
+        flash('只能刪除 Admin 帳號', 'error')
+    else:
+        db.session.delete(u)
+        db.session.commit()
+        flash(f'✅ 已刪除 {u.username}', 'success')
+    return redirect(url_for('provider_panel'))
 
 @app.route('/shops/add', methods=['POST'])
 @login_required(admin_only=True)

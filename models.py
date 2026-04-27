@@ -12,8 +12,14 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_code = db.Column(db.String(10), nullable=False, unique=True)  # 代號（如 "2", "18"）
     name = db.Column(db.String(100), nullable=False)
-    is_admin = db.Column(db.Boolean, default=False)
+    is_admin = db.Column(db.Boolean, default=False)      # 保留相容，role 為主
     created_date = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # ── 帳號權限欄位 ──────────────────────────────────────
+    role = db.Column(db.String(20), default='user')      # 'provider' | 'admin' | 'user'
+    username = db.Column(db.String(50), unique=True)     # 登入帳號
+    password_enc = db.Column(db.Text)                    # AES 加密後的密碼
+    must_change_pw = db.Column(db.Boolean, default=True) # 首次登入強制改密碼
 
     orders = db.relationship(
         'Order', backref='user', lazy=True,
@@ -26,7 +32,7 @@ class User(db.Model):
     )
 
     def __repr__(self):
-        return f'<User {self.user_code}: {self.name}>'
+        return f'<User {self.user_code}: {self.name} [{self.role}]>'
 
 
 class Shop(db.Model):
@@ -174,3 +180,18 @@ class IpBan(db.Model):
 
     def __repr__(self):
         return f'<IpBan {self.ip} fails={self.fail_count}>'
+
+
+class LoginLog(db.Model):
+    """登入紀錄（Provider 可查閱）"""
+    __tablename__ = 'login_logs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50))          # 輸入的帳號
+    role = db.Column(db.String(20))              # 登入成功後的角色
+    ip = db.Column(db.String(50))
+    success = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<LoginLog {self.username} {"OK" if self.success else "FAIL"}>'

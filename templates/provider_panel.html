@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Provider 管理後台{% endblock %}
+{% block page_title %}👑 Provider 管理後台{% endblock %}
+
+{% block head %}
+<style>
+  .tab-btns { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; }
+  .tab-btn { padding: 8px 18px; border: 1px solid var(--border); border-radius: 8px; background: #fff;
+             font-size: 13px; font-weight: 600; cursor: pointer; transition: all .15s; color: #475569; }
+  .tab-btn.active { background: #1E293B; color: #fff; border-color: #1E293B; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+  .panel-card { background: #fff; border-radius: 14px; border: 1px solid var(--border); padding: 24px; margin-bottom: 20px; }
+  .panel-title { font-size: 16px; font-weight: 700; color: #1E293B; margin-bottom: 16px; }
+  table.ptable { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.ptable th { background: #F8FAFC; padding: 10px 12px; text-align: left; color: #64748B;
+                    border-bottom: 2px solid var(--border); }
+  table.ptable td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .badge-ban   { background:#FEE2E2; color:#991B1B; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700; }
+  .badge-ok    { background:#D1FAE5; color:#065F46; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700; }
+  .badge-fail  { background:#FEF3C7; color:#92400E; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700; }
+  .badge-prov  { background:#E9D5FF; color:#4C1D95; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700; }
+  .badge-admin { background:#BFDBFE; color:#1D4ED8; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700; }
+  .badge-user  { background:#BBF7D0; color:#065F46; border-radius:20px; padding:2px 10px; font-size:11px; font-weight:700; }
+  .pw-toggle { cursor: pointer; font-family: monospace; background: #F1F5F9; padding: 2px 8px; border-radius: 4px; font-size:12px; }
+  .pw-hidden::after { content: '••••'; }
+  .add-form { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .add-form input { flex: 1; min-width: 160px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 8px; font-size:13px; }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="tab-btns">
+  <button class="tab-btn active" onclick="switchTab('bans', this)">🛡️ IP 封鎖</button>
+  <button class="tab-btn" onclick="switchTab('logs', this)">📋 登入記錄</button>
+  <button class="tab-btn" onclick="switchTab('admins', this)">👥 Admin 管理</button>
+  <button class="tab-btn" onclick="switchTab('passwords', this)">🔑 密碼查閱</button>
+</div>
+
+<!-- Tab 1: IP 封鎖 -->
+<div id="tab-bans" class="tab-pane active">
+  <div class="panel-card">
+    <div class="panel-title">🛡️ IP 封鎖管理</div>
+    {% if ban_list %}
+    <table class="ptable">
+      <thead><tr><th>IP</th><th>失敗次數</th><th>封鎖至</th><th>狀態</th><th>操作</th></tr></thead>
+      <tbody>
+        {% for b in ban_list %}
+        <tr>
+          <td><code>{{ b.ip }}</code></td>
+          <td>{{ b.fail_count }} 次</td>
+          <td>{{ b.until or '—' }}</td>
+          <td>{% if b.banned %}<span class="badge-ban">封鎖中</span>{% else %}<span class="badge-ok">正常</span>{% endif %}</td>
+          <td>
+            {% if b.banned %}
+            <form method="POST" action="{{ url_for('provider_unban', ban_id=b.id) }}" style="display:inline;">
+              <button type="submit" class="btn btn-secondary" style="padding:4px 12px;font-size:12px;"
+                      onclick="return confirm('確定解鎖此 IP？')">手動解鎖</button>
+            </form>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p style="color:#94A3B8; text-align:center; padding:20px 0;">目前沒有封鎖記錄</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tab 2: 登入記錄 -->
+<div id="tab-logs" class="tab-pane">
+  <div class="panel-card">
+    <div class="panel-title">📋 登入記錄（最近 200 筆）</div>
+    <table class="ptable">
+      <thead><tr><th>時間</th><th>帳號</th><th>角色</th><th>IP</th><th>結果</th></tr></thead>
+      <tbody>
+        {% for l in logs %}
+        {% set tw_time = l.created_at.strftime('%m/%d %H:%M') %}
+        <tr>
+          <td>{{ tw_time }}</td>
+          <td><code>{{ l.username or '—' }}</code></td>
+          <td>
+            {% if l.role == 'provider' %}<span class="badge-prov">Provider</span>
+            {% elif l.role == 'admin' %}<span class="badge-admin">Admin</span>
+            {% elif l.role == 'user' %}<span class="badge-user">User</span>
+            {% else %}—{% endif %}
+          </td>
+          <td style="color:#64748B; font-size:12px;">{{ l.ip }}</td>
+          <td>{% if l.success %}<span class="badge-ok">成功</span>{% else %}<span class="badge-fail">失敗</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Tab 3: Admin 管理 -->
+<div id="tab-admins" class="tab-pane">
+  <div class="panel-card">
+    <div class="panel-title">👥 新增 Admin 帳號</div>
+    <form method="POST" action="{{ url_for('provider_add_admin') }}" class="add-form">
+      <input type="text" name="name" placeholder="替代役男姓名" required>
+      <button type="submit" class="btn btn-primary">＋ 新增</button>
+    </form>
+    <p style="font-size:12px;color:#94A3B8;">新增後系統自動分配帳號（admin001, admin002…）和 4 位初始密碼，請在 Flash 訊息中記下並告知本人。</p>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-title">現有 Admin 帳號</div>
+    {% if admins %}
+    <table class="ptable">
+      <thead><tr><th>帳號</th><th>姓名</th><th>狀態</th><th>操作</th></tr></thead>
+      <tbody>
+        {% for a in admins %}
+        <tr>
+          <td><code>{{ a.username }}</code></td>
+          <td>{{ a.name }}</td>
+          <td>{% if a.must_change_pw %}<span class="badge-fail">待改密碼</span>{% else %}<span class="badge-ok">正常</span>{% endif %}</td>
+          <td style="display:flex; gap:6px;">
+            <form method="POST" action="{{ url_for('provider_reset_password', uid=a.id) }}">
+              <button type="submit" class="btn btn-secondary" style="padding:4px 12px;font-size:12px;">重設密碼</button>
+            </form>
+            <form method="POST" action="{{ url_for('provider_delete_admin', uid=a.id) }}"
+                  onsubmit="return confirm('確定刪除 {{ a.username }}？')">
+              <button type="submit" class="btn" style="padding:4px 12px;font-size:12px;background:#FEE2E2;color:#991B1B;border:1px solid #FECACA;">刪除</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p style="color:#94A3B8; text-align:center; padding:20px 0;">目前無 Admin 帳號</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tab 4: 密碼查閱 -->
+<div id="tab-passwords" class="tab-pane">
+  <div class="panel-card">
+    <div class="panel-title">🔑 User 帳號密碼查閱</div>
+    <div class="alert alert-warning" style="margin-bottom:16px; font-size:13px;">
+      ⚠️ 此功能僅供消防員忘記密碼時使用，請勿隨意查閱或告知第三人。
+    </div>
+    <table class="ptable">
+      <thead><tr><th>帳號</th><th>姓名</th><th>代號</th><th>密碼</th><th>狀態</th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td><code>{{ u.username }}</code></td>
+          <td>{{ u.name }}</td>
+          <td>{{ u.user_code }}</td>
+          <td>
+            {% if u.password_enc %}
+              <span class="pw-toggle pw-hidden" id="pw-{{ u.id }}"
+                    onclick="togglePw({{ u.id }}, '{{ decrypt_password(u.password_enc) | e }}')"
+                    title="點擊顯示密碼"></span>
+            {% else %}—{% endif %}
+          </td>
+          <td>{% if u.must_change_pw %}<span class="badge-fail">初始密碼</span>{% else %}<span class="badge-ok">已改過</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+function togglePw(id, pw) {
+  const el = document.getElementById('pw-' + id);
+  if (el.classList.contains('pw-hidden')) {
+    el.classList.remove('pw-hidden');
+    el.textContent = pw;
+  } else {
+    el.classList.add('pw-hidden');
+    el.textContent = '';
+  }
+}
+</script>
+{% endblock %}

@@ -205,6 +205,7 @@
       <span>消防局內部管理</span>
     </div>
     <div class="sidebar-nav">
+      {% if user and user.role in ['provider', 'admin'] %}
       <div class="nav-section">主要功能</div>
       <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}">
         <span class="icon">📊</span> 儀表板
@@ -228,12 +229,31 @@
       </a>
 
       <div class="nav-section" style="margin-top:8px">系統與說明</div>
+      {% if user.role == 'provider' %}
+      <a href="{{ url_for('provider_panel') }}" class="nav-link {% if 'provider' in request.endpoint %}active{% endif %}">
+        <span class="icon">👑</span> 管理者後台
+      </a>
+      {% endif %}
       <a href="{{ url_for('settings') }}" class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
         <span class="icon">⚙️</span> 設定
       </a>
-      <a href="{{ url_for('guide') }}" class="nav-link {% if request.endpoint == 'guide' %}active{% endif %}">
+      <a href="{{ url_for('guide_admin') }}" class="nav-link {% if 'guide' in request.endpoint %}active{% endif %}">
         <span class="icon">📖</span> 使用說明書
       </a>
+
+      {% else %}
+      {# User 角色 #}
+      <div class="nav-section">個人功能</div>
+      <a href="{{ url_for('user_portal') }}" class="nav-link {% if request.endpoint == 'user_portal' %}active{% endif %}">
+        <span class="icon">🧑‍🚒</span> 個人入口
+      </a>
+      <a href="{{ url_for('change_password') }}" class="nav-link {% if request.endpoint == 'change_password' %}active{% endif %}">
+        <span class="icon">🔐</span> 修改密碼
+      </a>
+      <a href="{{ url_for('guide_user') }}" class="nav-link {% if 'guide' in request.endpoint %}active{% endif %}">
+        <span class="icon">📖</span> 使用說明
+      </a>
+      {% endif %}
     </div>
   </nav>
 
@@ -242,7 +262,14 @@
     <div class="topbar">
       <div class="topbar-title">{% block page_title %}{% endblock %}</div>
       <div class="topbar-right">
-        <span class="text-muted text-sm">{{ user.name }}</span>
+        <span class="text-muted text-sm">
+          {% if user %}
+            {% if user.role == 'provider' %}👑
+            {% elif user.role == 'admin' %}🧑‍💼
+            {% else %}🧑‍🚒{% endif %}
+            {{ user.name }}
+          {% endif %}
+        </span>
         <a href="{{ url_for('logout') }}" class="btn-logout">登出</a>
       </div>
     </div>
