@@ -81,15 +81,55 @@
 
     /* Steps */
     .step-list { counter-reset: step; list-style: none; }
-    .step-list li { position: relative; padding-left: 48px; margin-bottom: 24px; }
+    .step-list li { position: relative; padding-left: 48px; margin-bottom: 36px; }
     .step-list li::before {
       counter-increment: step; content: counter(step); position: absolute; left: 0; top: 0;
       width: 32px; height: 32px; background: #F59E0B; color: #fff; font-weight: 700;
       border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px;
     }
     .step-list h4 { font-size: 16px; font-weight: 700; color: #1E293B; margin-bottom: 8px; }
-    .step-list p { font-size: 14px; color: #475569; margin-bottom: 8px; }
-    .step-list .note { background: #FEF3C7; color: #92400E; padding: 10px 14px; border-radius: 8px; font-size: 13px; border-left: 4px solid #F59E0B; margin-top: 8px; }
+    .step-list p { font-size: 14px; color: #475569; margin-bottom: 12px; }
+    .step-list .note { background: #FEF3C7; color: #92400E; padding: 10px 14px; border-radius: 8px; font-size: 13px; border-left: 4px solid #F59E0B; margin-top: 12px; }
+
+    /* --- Mockup UI Styles --- */
+    .mockup-window {
+      background: #fff; border: 1px solid #E2E8F0; border-radius: 12px;
+      overflow: hidden; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);
+      margin: 16px 0 24px; max-width: 100%;
+    }
+    .mockup-header {
+      background: #F8FAFC; border-bottom: 1px solid #E2E8F0; padding: 10px 16px;
+      display: flex; gap: 6px; align-items: center;
+    }
+    .mockup-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .mockup-dot.r { background: #EF4444; }
+    .mockup-dot.y { background: #F59E0B; }
+    .mockup-dot.g { background: #10B981; }
+    .mockup-title { margin-left: auto; margin-right: auto; font-size: 12px; font-weight: 600; color: #64748B; }
+    .mockup-body { padding: 16px; background: #fff; }
+    
+    /* Mock UI Elements */
+    .mock-table { width: 100%; font-size: 12px; border-collapse: collapse; }
+    .mock-table th { background: #F1F5F9; padding: 6px 8px; text-align: left; color: #64748B; border-bottom: 1px solid #E2E8F0; }
+    .mock-table td { padding: 8px; border-bottom: 1px solid #F1F5F9; }
+    .mock-badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 700; }
+    .mock-badge.red { background: #FEE2E2; color: #991B1B; }
+    .mock-badge.green { background: #D1FAE5; color: #065F46; }
+    
+    /* LINE Chat Mockup */
+    .line-chat {
+      background: #749BBB; border-radius: 12px; padding: 16px;
+      max-width: 400px; margin: 16px 0; display: flex; flex-direction: column; gap: 12px;
+    }
+    .msg-row { display: flex; gap: 8px; align-items: flex-start; }
+    .msg-row.right { justify-content: flex-end; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+    .bubble {
+      background: #fff; padding: 8px 12px; border-radius: 14px; font-size: 14px;
+      max-width: 80%; position: relative; line-height: 1.4; color: #1E293B;
+    }
+    .msg-row.right .bubble { background: #85E249; border-top-right-radius: 4px; }
+    .msg-row.left .bubble { border-top-left-radius: 4px; }
 
     /* Typography */
     h3 { font-size: 18px; font-weight: 700; margin: 24px 0 16px; color: #0F172A; }
@@ -170,12 +210,31 @@
     <ol class="step-list">
       <li>
         <h4>登入最高權限後台</h4>
-        <p>進入系統網頁後，輸入你的專屬帳號 (預設為 `polarbear268` 或 `Fangyuan`) 及密碼，登入後會在左側選單看到專屬的 <strong>「👑 管理者後台」</strong>。</p>
+        <p>進入系統網頁後，輸入你的專屬帳號 (預設為 <code>polarbear268</code> 或 <code>Fangyuan</code>) 及密碼，登入後會在左側選單看到專屬的 <strong>「👑 管理者後台」</strong>。</p>
       </li>
       <li>
         <h4>建立替代役男 (Admin) 帳號</h4>
         <p>在「管理者後台 > Admin 管理」中，輸入當前負責處理點餐的替代役男姓名。系統會自動生成一組 <code>admin00X</code> 的帳號及隨機的 4 位數密碼。請將這組帳號密碼交給替代役男。</p>
         <div class="note">役男第一次登入時，系統會強制要求他修改密碼。交接或退役時，你可以直接在這裡刪除舊帳號，並建立新帳號給下一位學弟。</div>
+        
+        <!-- 視覺化 Mockup -->
+        <div class="mockup-window" style="max-width: 500px;">
+          <div class="mockup-header">
+            <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+            <div class="mockup-title">👑 管理者後台 - Admin 管理</div>
+          </div>
+          <div class="mockup-body">
+            <div style="display:flex; gap:10px; margin-bottom:12px;">
+              <input type="text" value="新進學弟姓名" disabled style="padding:6px; border:1px solid #ccc; border-radius:4px; flex:1;">
+              <button disabled style="background:#1D4ED8; color:#fff; border:none; padding:6px 12px; border-radius:4px;">＋ 新增</button>
+            </div>
+            <table class="mock-table">
+              <tr><th>帳號</th><th>姓名</th><th>狀態</th></tr>
+              <tr><td><code>admin001</code></td><td>陳大明</td><td><span class="mock-badge green">正常</span></td></tr>
+              <tr><td><code>admin002</code></td><td>新進學弟</td><td><span class="mock-badge red">待改密碼</span></td></tr>
+            </table>
+          </div>
+        </div>
       </li>
       <li>
         <h4>處理消防員忘記密碼</h4>
@@ -211,6 +270,21 @@
           <li>點餐送達後，可以在此頁面直接點擊「未付 / 已付」切換付款狀態。</li>
           <li>如果有學長幫別人代墊，可以點擊該筆訂單的「無代墊」，選擇是誰幫忙付的錢，系統會自動轉移債務關係。</li>
         </ul>
+        
+        <!-- 視覺化 Mockup -->
+        <div class="mockup-window" style="max-width: 600px;">
+          <div class="mockup-header">
+            <div class="mockup-dot r"></div><div class="mockup-dot y"></div><div class="mockup-dot g"></div>
+            <div class="mockup-title">💰 每日記帳 - 午餐</div>
+          </div>
+          <div class="mockup-body">
+            <table class="mock-table">
+              <tr><th>人員</th><th>品項</th><th>金額</th><th>付款狀態</th></tr>
+              <tr><td>01 王大明</td><td>雞腿便當</td><td>$100</td><td><span class="mock-badge red">未付</span></td></tr>
+              <tr><td>05 林學長</td><td>排骨飯</td><td>$90</td><td><span class="mock-badge green">已付</span> (代墊: 王大明)</td></tr>
+            </table>
+          </div>
+        </div>
       </li>
     </ol>
   </div>
@@ -223,7 +297,22 @@
     <ol class="step-list">
       <li>
         <h4>在 LINE 群組點餐</h4>
-        <p>請參考下方的「LINE 指令大全」。最常用的就是 <code>!點</code> 指令。例如午餐想吃排骨飯，就在群組輸入 <code>!點 午餐 排骨飯</code> 即可。</p>
+        <p>請參考下方的「LINE 指令大全」。最常用的就是 <code>!點</code> 指令。</p>
+        
+        <!-- LINE 模擬對話 -->
+        <div class="line-chat">
+          <div class="msg-row right">
+            <div class="bubble">!點 午餐 排骨飯</div>
+          </div>
+          <div class="msg-row left">
+            <div class="avatar">🤖</div>
+            <div class="bubble">
+              ✅ 王大明 已點餐<br>
+              餐別：午餐<br>
+              品項：排骨飯
+            </div>
+          </div>
+        </div>
       </li>
       <li>
         <h4>登入個人入口查帳</h4>
