@@ -237,7 +237,8 @@
       <a href="{{ url_for('settings') }}" class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}">
         <span class="icon">⚙️</span> 設定
       </a>
-      <a href="{{ url_for('guide_admin') }}" class="nav-link {% if 'guide' in request.endpoint %}active{% endif %}">
+      <a href="{{ url_for('guide_provider') if user.role == 'provider' else url_for('guide_admin') }}"
+         class="nav-link {% if 'guide' in request.endpoint %}active{% endif %}">
         <span class="icon">📖</span> 使用說明書
       </a>
 
