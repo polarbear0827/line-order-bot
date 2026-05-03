@@ -167,24 +167,90 @@
 
   <!-- 6. 查帳單 -->
   <div class="guide-card">
-    <h2 class="guide-title">💰 查帳單 <code>!bill</code></h2>
-    <div class="cmd-box">!bill 21     ← 查 21 號阿明的帳單</div>
+    <h2 class="guide-title">💰 查個人帳單 <code>!bill</code> / <code>!查帳</code></h2>
+    <p class="guide-text">查某人目前所有未付款的欠帳明細與總金額。<code>!bill</code> 和 <code>!查帳</code> 效果完全相同，用哪個都可以。</p>
+    <div class="cmd-box">!bill 21     ← 查 21 號阿明的帳單
+!查帳 21   ← 效果完全相同，中文版</div>
     <div class="chat-wrap">
-      <div class="chat-row right"><div class="bubble-out">!bill 21</div></div>
+      <div class="chat-row right"><div class="bubble-out">!查帳 21</div></div>
       <div class="chat-clear"></div>
       <div class="chat-row left">
         <div class="avatar">🤖</div>
         <div class="bubble-in">📋 21號 阿明 的帳單
+════════════════════════════
+【今日 04/27】
+⏳ 午餐：大腸臭臭鍋 $160
+✅ 早餐：雞腿便當 $90
 
-【今日消費 04/27】
-⏳ 午餐: $160（代墊: 18號）
-
-【總欠款】
-欠 18. 王大明：$480
-
-💡 使用 !結清 21 進行結帳</div>
+【累計欠款】$480
+💡 輸入 !結清 21 結清所有欠款</div>
       </div>
     </div>
+    <div class="tip-box">💡 ✅ 是已付款，⏳ 是還沒付，看到紅色未付款記得提醒本人。</div>
+  </div>
+
+  <!-- 6.5 統計叫餐 -->
+  <div class="guide-card">
+    <h2 class="guide-title">📊 統計叫餐數量 <code>!統計</code> <span class="new-badge">NEW</span></h2>
+    <p class="guide-text">打電話給店家前，用這個指令一秒知道每個品項要訂幾份，不用自己數！</p>
+
+    <div class="cmd-label">📌 查今天全部餐別</div>
+    <div class="cmd-box">!統計</div>
+    <div class="chat-wrap">
+      <div class="chat-row right"><div class="bubble-out">!統計</div></div>
+      <div class="chat-clear"></div>
+      <div class="chat-row left">
+        <div class="avatar">🤖</div>
+        <div class="bubble-in">📊 今日統計 (05/03)
+────────────────────
+【早餐】便當伯（3 份）
+🍱 排骨飯 × 2
+🍱 雞腿便當 × 1
+────────────────────
+【午餐】麗媽（6 份）
+🍱 大腸臭臭鍋 × 3
+🍱 海鮮香香鍋 × 2
+🍱 控肉飯 × 1
+────────────────────
+今日總計 $1,200</div>
+      </div>
+    </div>
+
+    <div class="cmd-label" style="margin-top:18px;">📌 只查某一餐</div>
+    <div class="cmd-box">!統計 午餐     ← 只看今天午餐的統計
+!統計 早餐     ← 只看今天早餐
+!統計 晚餐     ← 只看今天晚餐
+!統計 飲料     ← 只看飲料訂單</div>
+    <div class="chat-wrap">
+      <div class="chat-row right"><div class="bubble-out">!統計 午餐</div></div>
+      <div class="chat-clear"></div>
+      <div class="chat-row left">
+        <div class="avatar">🤖</div>
+        <div class="bubble-in">📊 今日統計 (05/03)【午餐】麗媽
+────────────────────
+🍱 大腸臭臭鍋 × 3
+🍱 海鮮香香鍋 × 2
+🍱 控肉飯 × 1
+────────────────────
+共 6 份，總計 $840</div>
+      </div>
+    </div>
+
+    <table style="width:100%; border-collapse:collapse; font-size:13px; margin:16px 0 4px;">
+      <thead><tr style="background:#F8FAFC; border-bottom:1px solid var(--border);">
+        <th style="padding:8px 12px; text-align:left; color:#64748B;">輸入</th>
+        <th style="padding:8px 12px; text-align:left; color:#64748B;">查詢對象</th>
+      </tr></thead>
+      <tbody>
+        {% for kw, desc in [('!統計','今天所有餐別'),('!統計 早餐 / 早','今天早餐'),('!統計 午餐 / 午','今天午餐'),('!統計 晚餐 / 晚','今天晚餐'),('!統計 飲料 / 飲','今天飲料'),('!統計 點心','今天點心')] %}
+        <tr style="border-bottom:1px solid var(--border);">
+          <td style="padding:8px 12px;"><code style="background:#F1F5F9;padding:2px 6px;border-radius:4px;">{{ kw }}</code></td>
+          <td style="padding:8px 12px; color:#475569;">{{ desc }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="tip-box" style="margin-top:10px;">💡 打電話前先發 <code>!統計 午餐</code>，把數量截圖或照著念給老闆聽，最快！</div>
   </div>
 
   <!-- 7. 結清 -->
@@ -226,12 +292,13 @@
       <tbody>
         {% for cmd, desc in [
           ('!點 [餐別] [店家] [代墊人]', '批次點餐（最重要！）'),
-          ('!今天吃什麼', '隨機推薦 3 家當日有開的店'),
-          ('!吃什麼 / !隨機', '同上'),
+          ('!今天吃什麼 / !吃什麼 / !隨機', '隨機推薦 3 家當日有開的店'),
           ('!菜單 [店家名稱]', '查詢並傳送菜單圖片'),
-          ('!bill [代號]', '查某人的帳單與欠款'),
+          ('!bill [代號] / !查帳 [代號]', '查某人所有未付款明細與總金額'),
+          ('!統計', '今日所有餐別品項數量（叫餐用）'),
+          ('!統計 [餐別]', '例：!統計 午餐，只看午餐統計'),
           ('!today / !今日', '今天所有訂單總覽'),
-          ('!結清 [代號]', '標記某人已還錢'),
+          ('!結清 [代號]', '標記某人已還錢，清除欠款'),
           ('!help', '顯示指令說明'),
         ] %}
         <tr style="border-bottom: 1px solid var(--border);">
