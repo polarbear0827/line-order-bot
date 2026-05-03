@@ -18,7 +18,6 @@ from linebot.v3.webhooks import MessageEvent, TextMessageContent
 # ── 初始化 ──────────────────────────────────────────────
 app = Flask(__name__)
 app.config.from_object(Config)
-app.config['PERMANENT_SESSION_LIFETIME'] = __import__('datetime').timedelta(hours=8)
 db.init_app(app)
 
 configuration = Configuration(access_token=app.config['LINE_CHANNEL_ACCESS_TOKEN'])
@@ -323,6 +322,10 @@ def change_password():
         flash('密碼修改成功！', 'success')
         return _login_redirect(user)
     return render_template('change_password.html', user=user)
+
+@app.route('/favicon.ico')
+def favicon():
+    return '', 204
 
 @app.route('/health')
 def health():
