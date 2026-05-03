@@ -1023,8 +1023,10 @@ def handle_text_message(event):
         messages = order_bot.handle_menu_query(text, request.host_url)
         order_bot.send_messages(event.reply_token, messages)
         return
-    elif text.isdigit() or text.lower().startswith(('!bill', '！bill')):
+    elif text.isdigit() or text.lower().startswith(('!bill', '！bill', '!查帳', '！查帳')):
         reply = order_bot.handle_bill_query(text)
+    elif text.lower().startswith(('!統計', '！統計')):
+        reply = order_bot.handle_stats_query(text)
     elif text.lower().startswith(('!today', '！today', '!今日', '！今日', '!今天', '！今天')) and not text.lower().startswith(('!今天吃', '！今天吃')):
         reply = order_bot.handle_today_summary()
     elif text.lower().startswith(('!今天吃什麼', '！今天吃什麼', '!吃什麼', '！吃什麼', '!隨機', '！隨機')):

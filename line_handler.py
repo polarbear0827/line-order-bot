@@ -307,9 +307,9 @@ class OrderBot:
 
         return reply
 
-    # ─── !bill ────────────────────────────────────────────────────
+    # ─── !bill / !查帳 ───────────────────────────────────────────
     def handle_bill_query(self, message_text):
-        code = re.sub(r'[！!]bill|[！!]帳單|[！!]結帳', '', message_text, flags=re.IGNORECASE).strip()
+        code = re.sub(r'[！!]bill|[！!]帳單|[！!]結帳|[！!]查帳', '', message_text, flags=re.IGNORECASE).strip()
         if not code.isdigit():
             return '❌ 格式錯誤，例如：!bill 2 或直接輸入 2'
 
@@ -408,6 +408,58 @@ class OrderBot:
                 
         return messages
 
+    # ─── !統計 ───────────────────────────────────────────────────
+    def handle_stats_query(self, message_text):
+        MEAL_KEYWORDS = {
+            '早餐': 'breakfast', '早': 'breakfast',
+            '午餐': 'lunch',     '午': 'lunch',
+            '晚餐': 'dinner',    '晚': 'dinner',
+            '點心': 'snack',     '下午茶': 'snack',
+            '飲料': 'drink',     '飲': 'drink',
+        }
+        from collections import Counter
+        keyword = re.sub(r'[！!]統計', '', message_text, flags=re.IGNORECASE).strip()
+        forced_meal = MEAL_KEYWORDS.get(keyword)
+        today = date.today()
+
+        if forced_meal:
+            dm = DailyMenu.query.filter_by(menu_date=today, meal_type=forced_meal).first()
+            meal_name = Config.MEAL_TYPES.get(forced_meal, forced_meal)
+            if not dm or not dm.orders:
+                return f'📊 今日{meal_name}（{today.strftime("%m/%d")}）還沒有訂單'
+            shop = dm.shop.name if dm.shop else '未指定店家'
+            counter = Counter(o.items for o in dm.orders)
+            total_count = sum(counter.values())
+            total_amount = sum(o.amount for o in dm.orders)
+            reply = f'📊 今日統計 ({today.strftime("%m/%d")})【{meal_name}】{shop}\n'
+            reply += '─' * 20 + '\n'
+            for item, count in sorted(counter.items()):
+                reply += f'🍱 {item} × {count}\n'
+            reply += '─' * 20 + '\n'
+            reply += f'共 {total_count} 份，總計 ${int(total_amount)}'
+            return reply
+
+        # 不帶餐別 → 今天全部
+        dms = [dm for dm in DailyMenu.query.filter_by(menu_date=today).all() if dm.orders]
+        if not dms:
+            return f'📊 今日（{today.strftime("%m/%d")}）還沒有任何訂單'
+        reply = f'📊 今日統計 ({today.strftime("%m/%d")})\n'
+        grand_total = 0
+        for dm in dms:
+            meal_name = Config.MEAL_TYPES.get(dm.meal_type, dm.meal_type)
+            shop = dm.shop.name if dm.shop else '未指定店家'
+            counter = Counter(o.items for o in dm.orders)
+            total_count = sum(counter.values())
+            total_amount = sum(o.amount for o in dm.orders)
+            grand_total += total_amount
+            reply += '─' * 20 + '\n'
+            reply += f'【{meal_name}】{shop}（{total_count} 份）\n'
+            for item, count in sorted(counter.items()):
+                reply += f'🍱 {item} × {count}\n'
+        reply += '─' * 20 + '\n'
+        reply += f'今日總計 ${int(grand_total)}'
+        return reply
+
     # ─── !結清 ────────────────────────────────────────────────────
     def handle_checkout(self, message_text):
         code = re.sub(r'[！!](結清|checkout)', '', message_text, flags=re.IGNORECASE).strip()
@@ -456,8 +508,12 @@ class OrderBot:
 !菜單 [店家名稱]
 → 找尋並顯示該店家的菜單圖片
 
-!bill [代號] 或直接輸入代號
-→ 查個人帳單
+!bill [代號] / !查帳 [代號]
+→ 查個人所有未付款明細與總金額
+
+!統計 / !統計 [餐別]
+→ 今日各品項點餐數量（叫餐用）
+  例：!統計 午餐
 
 !today / !今日
 → 今日所有訂單
